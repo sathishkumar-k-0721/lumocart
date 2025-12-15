@@ -23,11 +23,13 @@ interface Product {
   isVisible: boolean;
   featured: boolean;
   image: string;
+  images?: string[];
   description?: string;
 }
 
 export default function ProductsPage() {
   const formRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -36,6 +38,9 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVisible, setFilterVisible] = useState<string>('all');
   const [filterFeatured, setFilterFeatured] = useState<string>('all');
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -88,7 +93,7 @@ export default function ProductsPage() {
     if (formData.stock < 0) newErrors.stock = 'Stock cannot be negative';
     if (!formData.categoryId) newErrors.categoryId = 'Please select a category';
     if (!formData.subcategoryId) newErrors.subcategoryId = 'Please select a subcategory';
-    if (!formData.image.trim()) newErrors.image = 'Product image URL is required';
+    if (productImages.length === 0) newErrors.image = 'Please upload at least one product image';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -108,10 +113,16 @@ export default function ProductsPage() {
 
       const method = editingId ? 'PUT' : 'POST';
 
+      const productData = {
+        ...formData,
+        image: productImages[0] || '',
+        images: productImages,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(productData),
       });
 
       if (res.ok) {
@@ -127,6 +138,7 @@ export default function ProductsPage() {
           isVisible: true,
           featured: false,
         });
+        setProductImages([]);
         setErrors({});
         setEditingId(null);
         setShowForm(false);
@@ -157,6 +169,7 @@ export default function ProductsPage() {
       isVisible: product.isVisible,
       featured: product.featured,
     });
+    setProductImages(product.images || [product.image]);
     setEditingId(product._id);
     setShowForm(true);
     // Scroll to form using ref
@@ -188,6 +201,68 @@ export default function ProductsPage() {
   const showToast = (message: string, type: 'success' | 'error') => {
     // Simple toast implementation - you can replace with a proper toast library
     alert(`${type.toUpperCase()}: ${message}`);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    const newImages: string[] = [];
+
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Convert image to base64
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+        
+        const base64 = await base64Promise;
+        newImages.push(base64);
+      }
+
+      setProductImages([...productImages, ...newImages]);
+      showToast(`${newImages.length} image(s) uploaded successfully!`, 'success');
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      showToast('Failed to upload images', 'error');
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setProductImages(productImages.filter((_, i) => i !== index));
+  };
+
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+
+    const newImages = [...productImages];
+    const draggedImage = newImages[draggedIndex];
+    newImages.splice(draggedIndex, 1);
+    newImages.splice(index, 0, draggedImage);
+
+    setProductImages(newImages);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const getCategoryName = (categoryId: string) => {
@@ -241,6 +316,7 @@ export default function ProductsPage() {
               isVisible: true,
               featured: false,
             });
+            setProductImages([]);
             setErrors({});
           }}
           className="whitespace-nowrap px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-lg rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center gap-2"
@@ -355,20 +431,82 @@ export default function ProductsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2">Image URL *</label>
-              <input
-                type="url"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.image ? 'border-red-500' : ''}`}
-                placeholder="https://..."
-              />
-              {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
-              {formData.image && (
-                <div className="mt-2">
-                  <img src={formData.image} alt="Preview" className="h-32 w-32 object-cover rounded border" />
+              <label className="block text-sm font-semibold mb-2">Product Images *</label>
+              <p className="text-xs text-gray-500 mb-3">Upload multiple images. Drag to reorder. First image will be the main image.</p>
+              
+              {/* Upload Button */}
+              <div className="mb-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className={`inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-lg cursor-pointer transition-all ${uploadingImages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <span>📁</span>
+                  <span>{uploadingImages ? 'Uploading...' : 'Upload Images'}</span>
+                </label>
+              </div>
+
+              {/* Image Preview Grid with Drag & Drop */}
+              {productImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {productImages.map((image, index) => (
+                    <div
+                      key={index}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`relative group border-2 rounded-lg overflow-hidden cursor-move transition-all ${
+                        draggedIndex === index ? 'opacity-50 border-blue-500' : 'border-gray-300 hover:border-red-500'
+                      } ${index === 0 ? 'ring-2 ring-green-500' : ''}`}
+                    >
+                      <div className="aspect-square bg-gray-100">
+                        <img
+                          src={image}
+                          alt={`Product ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      {/* Main Image Badge */}
+                      {index === 0 && (
+                        <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                          Main
+                        </div>
+                      )}
+                      
+                      {/* Image Number */}
+                      <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs font-bold px-2 py-1 rounded">
+                        {index + 1}
+                      </div>
+                      
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-60 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      >
+                        <span className="text-white text-3xl font-bold">×</span>
+                      </button>
+                      
+                      {/* Drag Indicator */}
+                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                        ⇅ Drag
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+              
+              {errors.image && <p className="text-red-500 text-sm mt-2">{errors.image}</p>}
             </div>
 
             <div className="flex gap-4 p-4 bg-gray-50 rounded">

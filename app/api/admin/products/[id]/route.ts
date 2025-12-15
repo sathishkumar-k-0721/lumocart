@@ -60,6 +60,7 @@ export async function PUT(
         subcategoryId: body.subcategoryId,
         slug: body.name.toLowerCase().replace(/\s+/g, '-'),
         image: body.image || '',
+        images: body.images || [],
         isVisible: body.isVisible !== undefined ? body.isVisible : true,
         featured: body.featured || false,
       },
