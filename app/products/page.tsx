@@ -134,7 +134,7 @@ export default function ProductsPage() {
                           {product.name}
                         </h3>
                         <div className="flex justify-between items-center mb-2">
-                          <span className="text-green-600 font-bold text-xl">£{product.price}</span>
+                          <span className="text-green-600 font-bold text-xl">₹{product.price}</span>
                           <span className={`text-sm px-2 py-1 rounded ${product.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                             {product.stock > 0 ? `${product.stock} left` : 'Out of stock'}
                           </span>

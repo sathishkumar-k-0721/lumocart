@@ -152,8 +152,11 @@ export default function SubcategoriesPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Subcategories</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
+        <div>
+          <h1 className="text-4xl font-bold text-red-600">Subcategories Management</h1>
+          <p className="text-gray-600 text-sm mt-2">Manage product subcategories</p>
+        </div>
         <button
           onClick={() => {
             setShowForm(!showForm);
@@ -161,9 +164,10 @@ export default function SubcategoriesPage() {
             setFormData({ name: '', description: '', categoryId: '' });
             setErrors({});
           }}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="whitespace-nowrap px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-lg rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center gap-2"
         >
-          {showForm ? '✕ Cancel' : '+ Add Subcategory'}
+          <span className="text-2xl">{showForm ? '✕' : '➕'}</span>
+          <span>{showForm ? 'Cancel' : 'Add Subcategory'}</span>
         </button>
       </div>
 
@@ -214,9 +218,9 @@ export default function SubcategoriesPage() {
             </div>
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold"
+              className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
-              {editingId ? 'Update Subcategory' : 'Create Subcategory'}
+              {editingId ? '✓ Update Subcategory' : '➕ Create Subcategory'}
             </button>
           </form>
         </div>
@@ -224,19 +228,19 @@ export default function SubcategoriesPage() {
 
       {/* Filters */}
       {!loading && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-red-200 hover:border-red-400 transition-all">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               placeholder="🔍 Search subcategories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
             />
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
             >
               <option value="all">All Categories</option>
               {categories.map((cat) => (
@@ -258,34 +262,34 @@ export default function SubcategoriesPage() {
           <p className="text-gray-600 mb-4">
             Showing {filteredSubcategories.length} of {subcategories.length} subcategories
           </p>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-red-300">
             <table className="w-full">
-              <thead className="bg-gray-100 border-b">
+              <thead className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-300">
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold">Name</th>
-                  <th className="px-6 py-3 text-left font-semibold">Parent Category</th>
-                  <th className="px-6 py-3 text-left font-semibold">Slug</th>
-                  <th className="px-6 py-3 text-left font-semibold">Actions</th>
+                  <th className="px-6 py-4 text-left font-bold text-gray-700">Name</th>
+                  <th className="px-6 py-4 text-left font-bold text-gray-700">Parent Category</th>
+                  <th className="px-6 py-4 text-left font-bold text-gray-700">Slug</th>
+                  <th className="px-6 py-4 text-left font-bold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSubcategories.map((sub) => (
-                  <tr key={sub._id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-3 font-semibold">{sub.name}</td>
-                    <td className="px-6 py-3 text-gray-600">{getCategoryName(sub.categoryId)}</td>
-                    <td className="px-6 py-3 text-gray-500 text-sm">{sub.slug}</td>
-                    <td className="px-6 py-3">
+                  <tr key={sub._id} className="border-b border-red-100 hover:bg-red-50 transition-colors">
+                    <td className="px-6 py-4 font-semibold text-gray-800">{sub.name}</td>
+                    <td className="px-6 py-4 text-gray-600">{getCategoryName(sub.categoryId)}</td>
+                    <td className="px-6 py-4 text-gray-500 text-sm font-mono bg-gray-50 rounded">{sub.slug}</td>
+                    <td className="px-6 py-4">
                       <button
                         onClick={() => handleEdit(sub)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm mr-2 font-semibold"
+                        className="px-4 py-2.5 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-sm mr-3 font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDelete(sub._id, sub.name)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm font-semibold"
+                        className="px-4 py-2.5 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </td>
                   </tr>
@@ -302,9 +306,9 @@ export default function SubcategoriesPage() {
           {!searchTerm && (
             <button
               onClick={() => setShowForm(true)}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="mt-6 px-8 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
             >
-              Create first subcategory
+              ➕ Create First Subcategory
             </button>
           )}
         </div>

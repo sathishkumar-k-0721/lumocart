@@ -113,20 +113,22 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-red-600 mb-2">Orders Management</h1>
-        <p className="text-gray-600">Manage customer orders and update status</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600">
+        <div>
+          <h1 className="text-4xl font-bold text-red-600">Orders Management</h1>
+          <p className="text-gray-600 text-sm mt-2">Manage customer orders and update status</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-t-4 border-red-600">
+      <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-red-300 hover:border-red-400 transition-all">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold mb-2">Filter by Order Status</label>
+            <label className="block text-sm font-semibold mb-2 text-gray-700">Filter by Order Status</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
             >
               <option value="">All Statuses</option>
               {ORDER_STATUSES.map(status => (
@@ -135,11 +137,11 @@ export default function OrdersPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-semibold mb-2">Filter by Payment Status</label>
+            <label className="block text-sm font-semibold mb-2 text-gray-700">Filter by Payment Status</label>
             <select
               value={filterPaymentStatus}
               onChange={(e) => setFilterPaymentStatus(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
             >
               <option value="">All Payment Statuses</option>
               {PAYMENT_STATUSES.map(status => (
@@ -158,25 +160,25 @@ export default function OrdersPage() {
           <p className="text-gray-600 text-lg">No orders found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-red-300">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-red-600 border-b">
+              <thead className="bg-gradient-to-r from-red-600 to-red-700 border-b-2 border-red-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Order #</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Customer</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Items</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Total</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Order Status</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Payment</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Date</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-white">Actions</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Order #</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Customer</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Items</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Total</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Order Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Payment</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Date</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-white">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-semibold text-blue-600">{order.orderNumber}</td>
+                  <tr key={order.id} className="border-b border-red-100 hover:bg-red-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-bold text-red-600">{order.orderNumber}</td>
                     <td className="px-6 py-4 text-sm">
                       <div>
                         <p className="font-semibold text-gray-800">{order.user.name}</p>
@@ -184,7 +186,7 @@ export default function OrdersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{order.items.length} items</td>
-                    <td className="px-6 py-4 text-sm font-bold text-green-600">£{order.totalAmount.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-green-600">₹{order.totalAmount.toFixed(2)}</td>
                     <td className="px-6 py-4 text-sm">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                         {order.status}

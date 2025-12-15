@@ -263,19 +263,19 @@ export default function ProductsPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : ''}`}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.name ? 'border-red-500' : ''}`}
                   placeholder="Product name"
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">Price (£) *</label>
+                <label className="block text-sm font-semibold mb-2">Price (₹) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.price ? 'border-red-500' : ''}`}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.price ? 'border-red-500' : ''}`}
                   placeholder="0.00"
                 />
                 {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
@@ -284,13 +284,13 @@ export default function ProductsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold mb-2">Original Price (£)</label>
+                <label className="block text-sm font-semibold mb-2">Original Price (₹)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.originalPrice}
                   onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Optional"
                 />
               </div>
@@ -300,7 +300,7 @@ export default function ProductsPage() {
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.stock ? 'border-red-500' : ''}`}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.stock ? 'border-red-500' : ''}`}
                   placeholder="0"
                 />
                 {errors.stock && <p className="text-red-500 text-sm mt-1">{errors.stock}</p>}
@@ -313,7 +313,7 @@ export default function ProductsPage() {
                 <select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.categoryId ? 'border-red-500' : ''}`}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.categoryId ? 'border-red-500' : ''}`}
                 >
                   <option value="">Select Category</option>
                   {categories.map((cat) => (
@@ -330,7 +330,7 @@ export default function ProductsPage() {
                   value={formData.subcategoryId}
                   onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
                   disabled={!formData.categoryId}
-                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.subcategoryId ? 'border-red-500' : ''} ${!formData.categoryId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.subcategoryId ? 'border-red-500' : ''} ${!formData.categoryId ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                 >
                   <option value="">Select Subcategory</option>
                   {filteredSubcategories.map((sub) => (
@@ -348,7 +348,7 @@ export default function ProductsPage() {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                 rows={3}
                 placeholder="Product description"
               />
@@ -360,7 +360,7 @@ export default function ProductsPage() {
                 type="url"
                 value={formData.image}
                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.image ? 'border-red-500' : ''}`}
+                className={`w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500 ${errors.image ? 'border-red-500' : ''}`}
                 placeholder="https://..."
               />
               {errors.image && <p className="text-red-500 text-sm mt-1">{errors.image}</p>}
@@ -405,22 +405,22 @@ export default function ProductsPage() {
 
       {/* Filters */}
       {!loading && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-red-300 hover:border-red-400 transition-all">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="🔍 Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               />
             </div>
             <div>
               <select
                 value={filterVisible}
                 onChange={(e) => setFilterVisible(e.target.value)}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               >
                 <option value="all">All Visibility</option>
                 <option value="visible">Visible Only</option>
@@ -431,7 +431,7 @@ export default function ProductsPage() {
               <select
                 value={filterFeatured}
                 onChange={(e) => setFilterFeatured(e.target.value)}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               >
                 <option value="all">All Products</option>
                 <option value="featured">Featured Only</option>
@@ -451,12 +451,12 @@ export default function ProductsPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow overflow-hidden hover:shadow-lg transition-shadow">
+              <div key={product._id} className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-red-300 hover:border-red-600 transition-all duration-300 transform hover:-translate-y-2">
                 <div className="relative h-40 overflow-hidden bg-gray-100">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute top-2 right-2 flex gap-1">
                     {product.isVisible && (
@@ -473,7 +473,7 @@ export default function ProductsPage() {
                     {getCategoryName(product.categoryId)} → {getSubcategoryName(product.subcategoryId)}
                   </p>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-green-600 font-bold text-lg">£{product.price}</span>
+                    <span className="text-green-600 font-bold text-lg">₹{product.price}</span>
                     <span className={`text-xs font-semibold px-2 py-1 rounded ${
                       product.stock > 20 ? 'bg-green-100 text-green-800' :
                       product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
@@ -482,18 +482,18 @@ export default function ProductsPage() {
                       {product.stock} stock
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <button
                       onClick={() => handleEdit(product)}
-                      className="flex-1 px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm font-semibold"
+                      className="flex-1 px-3 py-2.5 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
                     >
-                      ✏️ Edit
+                      Edit
                     </button>
                     <button
                       onClick={() => handleDelete(product._id, product.name)}
-                      className="flex-1 px-3 py-2 bg-red-700 text-white rounded hover:bg-red-800 text-sm font-semibold"
+                      className="flex-1 px-3 py-2.5 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
                     >
-                      🗑️ Delete
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -506,9 +506,9 @@ export default function ProductsPage() {
           <p className="text-gray-600 text-lg">No products found</p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
-            Create first product
+            ➕ Create first product
           </button>
         </div>
       )}

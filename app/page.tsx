@@ -91,7 +91,7 @@ export default async function HomePage() {
               <div className="p-4">
                 <h3 className="font-bold text-lg mb-2 group-hover:text-purple-600">{(product as any).name}</h3>
                 <div className="flex justify-between items-center">
-                  <span className="text-green-600 font-bold text-xl">£{(product as any).price}</span>
+                  <span className="text-green-600 font-bold text-xl">₹{(product as any).price}</span>
                   <span className="text-gray-500 text-sm">Stock: {(product as any).stock}</span>
                 </div>
               </div>
