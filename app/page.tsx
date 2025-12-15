@@ -1,143 +1,114 @@
+import { MongoClient } from 'mongodb';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { FiShoppingBag, FiTrendingUp, FiAward, FiHeart, FiTruck, FiShield } from 'react-icons/fi';
+import { getCurrentUser } from '@/lib/auth';
 
-export default function Home() {
-  const features = [
-    {
-      icon: FiTruck,
-      title: 'Free Shipping',
-      description: 'Free shipping on orders over ₹500',
-    },
-    {
-      icon: FiShield,
-      title: 'Secure Payment',
-      description: 'Safe and secure payment with Razorpay',
-    },
-    {
-      icon: FiAward,
-      title: 'Quality Products',
-      description: 'Handpicked items with quality guarantee',
-    },
-    {
-      icon: FiHeart,
-      title: 'Customer Love',
-      description: 'Thousands of happy customers',
-    },
-  ];
+async function getProducts() {
+  const client = new MongoClient(process.env.DATABASE_URL!);
+  await client.connect();
+  const db = client.db('giftwebsite');
+  const products = await db
+    .collection('products')
+    .find({ isVisible: true, featured: true })
+    .limit(8)
+    .toArray();
+  await client.close();
+  return products;
+}
+
+async function getCategories() {
+  const client = new MongoClient(process.env.DATABASE_URL!);
+  await client.connect();
+  const db = client.db('giftwebsite');
+  const categories = await db.collection('categories').find({}).toArray();
+  await client.close();
+  return categories;
+}
+
+export default async function HomePage() {
+  const [products, categories] = await Promise.all([
+    getProducts(),
+    getCategories(),
+  ]);
+  
+  const user = await getCurrentUser();
 
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 px-4 py-24 text-white">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold leading-tight md:text-6xl lg:text-7xl">
-              Welcome to Lumo
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-xl text-blue-100">
-              Discover unique gifts for every occasion. Quality products, amazing prices, and exceptional service.
-            </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <Link href="/products">
-                <Button size="lg" variant="outline" className="bg-white text-blue-600 hover:bg-blue-50">
-                  <FiShoppingBag className="mr-2 h-5 w-5" />
-                  Shop Now
-                </Button>
-              </Link>
-              <Link href="/categories">
-                <Button size="lg" className="bg-blue-800 hover:bg-blue-900">
-                  Browse Categories
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="bg-white px-4 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card key={index} className="text-center">
-                  <CardContent className="pt-6">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
-                      <Icon className="h-8 w-8 text-blue-600" />
-                    </div>
-                    <h3 className="mb-2 text-lg font-semibold text-gray-900">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Preview */}
-      <section className="bg-gray-50 px-4 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-gray-900 md:text-4xl">
-              Shop by Category
-            </h2>
-            <p className="mt-4 text-gray-600">
-              Find the perfect gift for any occasion
-            </p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { name: 'Birthday Gifts', emoji: '🎂', color: 'from-pink-500 to-rose-500' },
-              { name: 'Anniversary', emoji: '💝', color: 'from-red-500 to-pink-500' },
-              { name: 'Wedding Gifts', emoji: '💍', color: 'from-purple-500 to-pink-500' },
-              { name: 'Corporate', emoji: '💼', color: 'from-blue-500 to-cyan-500' },
-            ].map((category, index) => (
-              <Link
-                key={index}
-                href={`/products?category=${category.name.toLowerCase().replace(' ', '-')}`}
-                className="group"
-              >
-                <Card className="overflow-hidden transition-transform hover:scale-105">
-                  <div className={`bg-gradient-to-br ${category.color} p-8 text-center`}>
-                    <div className="text-6xl">{category.emoji}</div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="text-center font-semibold text-gray-900 group-hover:text-blue-600">
-                      {category.name}
-                    </h3>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-blue-600 px-4 py-16 text-white">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">
-            Ready to Find the Perfect Gift?
-          </h2>
-          <p className="mt-4 text-xl text-blue-100">
-            Browse our collection and discover something special today
-          </p>
-          <div className="mt-8">
-            <Link href="/products">
-              <Button size="lg" variant="outline" className="bg-white text-blue-600 hover:bg-blue-50">
-                <FiShoppingBag className="mr-2 h-5 w-5" />
-                Start Shopping
-              </Button>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section - Hidden for admin users */}
+      {user?.role !== 'ADMIN' && (
+        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-20">
+          <div className="max-w-6xl mx-auto px-4">
+            <h1 className="text-5xl font-bold mb-4">Welcome to Lumo</h1>
+            <p className="text-xl mb-8">Premium gifts for every occasion</p>
+            <Link href="/products" className="inline-block px-8 py-3 bg-white text-purple-600 rounded font-bold hover:bg-gray-100 transition">
+              Shop Now →
             </Link>
           </div>
         </div>
-      </section>
+      )}
+
+      {/* Categories */}
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <h2 className="text-3xl font-bold mb-8">Shop by Category</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {categories.map((category: any) => (
+            <Link
+              key={(category as any)._id}
+              href={`/products?category=${(category as any)._id}`}
+              className="group overflow-hidden rounded-lg shadow hover:shadow-lg transition-all"
+            >
+              <img
+                src={(category as any).image}
+                alt={(category as any).name}
+                className="w-full h-40 object-cover group-hover:scale-105 transition"
+              />
+              <div className="p-4 bg-gray-50 group-hover:bg-gray-100 transition">
+                <h3 className="font-bold text-lg">{(category as any).name}</h3>
+                <p className="text-gray-600 text-sm">{(category as any).description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Featured Products */}
+      <div className="max-w-6xl mx-auto px-4 py-12 bg-gray-50">
+        <h2 className="text-3xl font-bold mb-8">Featured Products</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {products.map((product: any) => (
+            <Link
+              key={(product as any)._id}
+              href={`/products/${(product as any).slug}`}
+              className="bg-white rounded-lg shadow hover:shadow-lg transition-all overflow-hidden group"
+            >
+              <div className="relative overflow-hidden h-48">
+                <img
+                  src={(product as any).image}
+                  alt={(product as any).name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-lg mb-2 group-hover:text-purple-600">{(product as any).name}</h3>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-600 font-bold text-xl">£{(product as any).price}</span>
+                  <span className="text-gray-500 text-sm">Stock: {(product as any).stock}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-purple-600 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Find the Perfect Gift?</h2>
+          <Link href="/products" className="inline-block px-8 py-3 bg-white text-purple-600 rounded font-bold hover:bg-gray-100 transition">
+            Browse All Products
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

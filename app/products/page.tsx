@@ -1,221 +1,156 @@
 'use client';
 
-import * as React from 'react';
-import { ProductCard } from '@/components/shop/product-card';
-import { LoadingSpinner } from '@/components/ui/loading';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import toast from 'react-hot-toast';
-import { FiSearch, FiFilter } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 interface Product {
-  id: string;
+  _id: string;
   name: string;
   slug: string;
   price: number;
-  originalPrice: number | null;
-  image: string;
   stock: number;
-  featured: boolean;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  _count: {
-    products: number;
-  };
+  image: string;
+  categoryId: string;
+  subcategoryId: string;
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = React.useState<Product[]>([]);
-  const [categories, setCategories] = React.useState<Category[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [addingToCart, setAddingToCart] = React.useState<string | null>(null);
-  const [search, setSearch] = React.useState('');
-  const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null);
-  const [page, setPage] = React.useState(1);
-  const [totalPages, setTotalPages] = React.useState(1);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
 
-  // Fetch products
-  const fetchProducts = React.useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const categoryId = searchParams.get('category');
+    if (categoryId) {
+      setSelectedCategory(categoryId);
+      setFilteredProducts(products.filter((p) => p.categoryId === categoryId));
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [products, searchParams]);
+
+  const fetchData = async () => {
     try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '12',
-      });
-      
-      if (search) params.append('search', search);
-      if (selectedCategory) params.append('category', selectedCategory);
+      const [prodRes, catRes] = await Promise.all([
+        fetch('/api/admin/products'),
+        fetch('/api/admin/categories'),
+      ]);
 
-      const res = await fetch(`/api/products?${params}`);
-      const data = await res.json();
-
-      if (data.success) {
-        setProducts(data.products);
-        setTotalPages(data.pagination.pages);
+      if (prodRes.ok && catRes.ok) {
+        const prodData = await prodRes.json();
+        const catData = await catRes.json();
+        const visibleProducts = prodData.filter((p: any) => p.isVisible);
+        setProducts(visibleProducts);
+        setCategories(catData);
       }
     } catch (error) {
-      toast.error('Failed to load products');
+      console.error('Failed to fetch:', error);
     } finally {
       setLoading(false);
     }
-  }, [page, search, selectedCategory]);
-
-  // Fetch categories
-  const fetchCategories = React.useCallback(async () => {
-    try {
-      const res = await fetch('/api/categories');
-      const data = await res.json();
-      if (data.success) {
-        setCategories(data.categories);
-      }
-    } catch (error) {
-      console.error('Failed to load categories');
-    }
-  }, []);
-
-  React.useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
-  React.useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
-  const handleAddToCart = async (productId: string) => {
-    setAddingToCart(productId);
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity: 1 }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success('Added to cart!');
-      } else {
-        toast.error(data.error || 'Failed to add to cart');
-      }
-    } catch (error) {
-      toast.error('Failed to add to cart');
-    } finally {
-      setAddingToCart(null);
-    }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchProducts();
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    if (!categoryId) {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(products.filter((p) => p.categoryId === categoryId));
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">All Products</h1>
-          <p className="mt-2 text-gray-600">
-            Discover our amazing collection of gifts
-          </p>
+          <h1 className="text-4xl font-bold mb-2">Our Products</h1>
+          <p className="text-gray-600">Discover our premium collection</p>
         </div>
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-col gap-4 md:flex-row">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1">
-            <Input
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              icon={<FiSearch className="h-4 w-4 text-gray-400" />}
-            />
-          </form>
-
-          {/* Category Filter */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            <Button
-              variant={selectedCategory === null ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => {
-                setSelectedCategory(null);
-                setPage(1);
-              }}
-            >
-              All
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.slug ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setSelectedCategory(category.slug);
-                  setPage(1);
-                }}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Filters */}
+          <div className="bg-white rounded-lg shadow p-6 h-fit">
+            <h2 className="text-lg font-bold mb-4">Filters</h2>
+            
+            <div className="mb-6">
+              <h3 className="font-semibold mb-3">Category</h3>
+              <button
+                onClick={() => handleCategoryChange('')}
+                className={`block w-full text-left p-2 rounded mb-2 ${
+                  !selectedCategory ? 'bg-purple-100 text-purple-700 font-semibold' : 'hover:bg-gray-100'
+                }`}
               >
-                {category.name} ({category._count.products})
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {loading ? (
-          <div className="py-20">
-            <LoadingSpinner size="lg" text="Loading products..." />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 py-20 text-center">
-            <p className="text-gray-500">No products found</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  loading={addingToCart === product.id}
-                />
+                All Categories
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat._id}
+                  onClick={() => handleCategoryChange(cat._id)}
+                  className={`block w-full text-left p-2 rounded mb-2 ${
+                    selectedCategory === cat._id
+                      ? 'bg-purple-100 text-purple-700 font-semibold'
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.name}
+                </button>
               ))}
             </div>
+          </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  Next
-                </Button>
+          {/* Products Grid */}
+          <div className="md:col-span-3">
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-lg font-semibold">Loading...</div>
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <div>
+                <p className="text-gray-600 mb-4">Showing {filteredProducts.length} products</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map((product) => (
+                    <Link
+                      key={product._id}
+                      href={`/products/${product.slug}`}
+                      className="bg-white rounded-lg shadow hover:shadow-lg transition-all overflow-hidden group"
+                    >
+                      <div className="relative overflow-hidden h-48">
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-bold text-lg mb-2 group-hover:text-purple-600 line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-green-600 font-bold text-xl">£{product.price}</span>
+                          <span className={`text-sm px-2 py-1 rounded ${product.stock > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {product.stock > 0 ? `${product.stock} left` : 'Out of stock'}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg">No products found</p>
               </div>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

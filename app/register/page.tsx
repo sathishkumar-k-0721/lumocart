@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { FiMail, FiLock, FiUser, FiShoppingBag } from 'react-icons/fi';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = React.useState(false);
   const [formData, setFormData] = React.useState({
     name: '',
@@ -20,6 +21,19 @@ export default function RegisterPage() {
     confirmPassword: '',
   });
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (session?.user) {
+      const userRole = (session.user as any)?.role;
+      if (userRole === 'ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
+      router.refresh();
+    }
+  }, [session, router]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -77,7 +91,17 @@ export default function RegisterPage() {
         });
 
         if (result?.ok) {
-          router.push('/');
+          // Fetch the session to get user role
+          const sessionRes = await fetch('/api/auth/session');
+          const sessionData = await sessionRes.json();
+          const userRole = sessionData?.user?.role;
+          
+          // Redirect based on role
+          if (userRole === 'ADMIN') {
+            router.push('/admin');
+          } else {
+            router.push('/');
+          }
           router.refresh();
         }
       } else {

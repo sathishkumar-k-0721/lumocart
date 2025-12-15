@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ import { FiMail, FiLock, FiShoppingBag } from 'react-icons/fi';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [loading, setLoading] = React.useState(false);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [formData, setFormData] = React.useState({
     email: '',
     password: '',
@@ -21,8 +23,45 @@ export default function LoginPage() {
 
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (session?.user) {
+      const userRole = (session.user as any)?.role;
+      if (userRole === 'ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push(callbackUrl);
+      }
+      router.refresh();
+    }
+  }, [session, router, callbackUrl]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -36,7 +75,18 @@ export default function LoginPage() {
         toast.error(result.error);
       } else if (result?.ok) {
         toast.success('Logged in successfully!');
-        router.push(callbackUrl);
+        
+        // Fetch the session to get user role
+        const res = await fetch('/api/auth/session');
+        const sessionData = await res.json();
+        const userRole = sessionData?.user?.role;
+        
+        // Redirect based on role
+        if (userRole === 'ADMIN') {
+          router.push('/admin');
+        } else {
+          router.push(callbackUrl);
+        }
         router.refresh();
       }
     } catch (error) {
@@ -48,6 +98,10 @@ export default function LoginPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
   };
 
   return (
@@ -79,6 +133,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
+                error={errors.email}
                 required
                 icon={<FiMail className="h-4 w-4 text-gray-400" />}
               />
@@ -91,6 +146,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
+                error={errors.password}
                 required
                 icon={<FiLock className="h-4 w-4 text-gray-400" />}
               />

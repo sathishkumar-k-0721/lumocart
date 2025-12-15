@@ -30,36 +30,57 @@ enum Role {
 
 // Category Model
 model Category {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  slug        String    @unique
-  description String?
-  image       String?
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  slug          String        @unique
+  description   String?
+  image         String?
+  subcategories Subcategory[]
+  products      Product[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@map("categories")
 }
 
+// Subcategory Model
+model Subcategory {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String
+  description String?
+  image       String?
+  categoryId  String    @db.ObjectId
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([categoryId, slug])
+  @@map("subcategories")
+}
+
 // Product Model
 model Product {
-  id            String      @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
-  slug          String      @unique
-  description   String
-  price         Float
-  originalPrice Float?
-  image         String
-  images        String[]
-  categoryId    String?     @db.ObjectId
-  category      Category?   @relation(fields: [categoryId], references: [id])
-  stock         Int         @default(0)
-  featured      Boolean     @default(false)
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  slug           String        @unique
+  description    String
+  price          Float
+  originalPrice  Float?
+  image          String
+  images         String[]
+  categoryId     String?       @db.ObjectId
+  category       Category?     @relation(fields: [categoryId], references: [id])
+  subcategoryId  String?       @db.ObjectId
+  subcategory    Subcategory?  @relation(fields: [subcategoryId], references: [id])
+  stock          Int           @default(0)
+  featured       Boolean       @default(false)
+  isVisible      Boolean       @default(true)
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@map("products")
 }
