@@ -26,7 +26,7 @@ Current Credentials:
 - Username: plsathish0721_db_user
 - Password: zFIBbJV1IjeOI3xj
 - Cluster: cluster0.yjovwvc.mongodb.net
-- Database: giftwebsite
+- Database: lumocart
 ```
 
 **Diagnosis Result**: ❌ **AUTHENTICATION FAILED**
@@ -52,7 +52,7 @@ If you have your own MongoDB Atlas account:
 
 2. **Update `.env.local`** (replace with your credentials):
    ```env
-   DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/giftwebsite?retryWrites=true&w=majority
+   DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/lumocart?retryWrites=true&w=majority
    ```
 
 3. **Restart the server**:
@@ -80,7 +80,7 @@ Don't have MongoDB Atlas? Use local MongoDB:
 
 3. **Update `.env.local`**:
    ```env
-   DATABASE_URL=mongodb://localhost:27017/giftwebsite
+   DATABASE_URL=mongodb://localhost:27017/lumocart
    ```
 
 4. **Restart server**: `npm run dev`
@@ -113,11 +113,11 @@ Don't have MongoDB Atlas? Use local MongoDB:
    - Choose "Drivers" → "Node.js"
    - Copy the connection string
    - Replace `<username>:<password>` with your credentials
-   - Change `myFirstDatabase` to `giftwebsite`
+   - Change `myFirstDatabase` to `lumocart`
 
 5. **Update `.env.local`**:
    ```env
-   DATABASE_URL=mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/giftwebsite?retryWrites=true&w=majority
+   DATABASE_URL=mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/lumocart?retryWrites=true&w=majority
    ```
 
 6. **Restart server**: `npm run dev`
@@ -203,7 +203,7 @@ You should see:
    - Make sure user has "Read and write" permissions
 
 3. **Correct Database Name?**
-   - Should be `giftwebsite` in the connection string
+   - Should be `lumocart` in the connection string
 
 4. **Network Access?**
    - If using MongoDB Atlas, check Network Access whitelist

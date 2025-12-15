@@ -10,7 +10,7 @@
 Username: plsathish0721_db_user
 Password: zFIBbJV1IjeOI3xj
 Cluster: cluster0.yjovwvc.mongodb.net
-Database: giftwebsite
+Database: lumocart
 ```
 
 ---
@@ -38,7 +38,7 @@ mongodb+srv://username:password@cluster-name.mongodb.net/database?retryWrites=tr
 Edit `c:\Projects\lumocart\.env.local`:
 
 ```env
-DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/giftwebsite?retryWrites=true&w=majority
+DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/lumocart?retryWrites=true&w=majority
 ```
 
 ⚠️ **Important**: If your password has special characters like `@` or `#`, you MUST URL-encode them:
@@ -78,7 +78,7 @@ mongod
 
 #### Step 3: Update `.env.local`
 ```env
-DATABASE_URL=mongodb://localhost:27017/giftwebsite
+DATABASE_URL=mongodb://localhost:27017/lumocart
 ```
 
 #### Step 4: Restart Server
@@ -118,16 +118,16 @@ If you don't have an account or your cluster is unreachable:
 3. Select "Drivers"
 4. Copy the Node.js connection string
 5. Replace `<username>:<password>` with your credentials
-6. Add `/giftwebsite` after domain
+6. Add `/lumocart` after domain
 
 Example:
 ```
-mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/giftwebsite?retryWrites=true&w=majority
+mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/lumocart?retryWrites=true&w=majority
 ```
 
 #### Step 5: Update `.env.local`
 ```env
-DATABASE_URL=mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/giftwebsite?retryWrites=true&w=majority
+DATABASE_URL=mongodb+srv://myusername:mypassword@cluster0.xxxxx.mongodb.net/lumocart?retryWrites=true&w=majority
 ```
 
 #### Step 6: Restart Server
@@ -179,7 +179,7 @@ You should see:
 - Database name is wrong
 - User doesn't have access to that database
 
-### Error: `Database giftwebsite not found`
+### Error: `Database lumocart not found`
 - This is OK! Prisma will create it automatically
 - Just ignore this warning
 

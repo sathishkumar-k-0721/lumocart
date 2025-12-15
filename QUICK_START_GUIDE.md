@@ -401,7 +401,7 @@ To restart:
 ### Database Operations
 - View/modify data in MongoDB Atlas
 - Connection string: `.env.local` file
-- Database name: `giftwebsite`
+- Database name: `lumocart`
 
 ### Troubleshooting
 - If port 3000 is occupied: Change in `next.config.mjs`

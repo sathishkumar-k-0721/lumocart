@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 
 interface DashboardStats {
@@ -18,6 +19,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
   const [stats, setStats] = useState<DashboardStats>({
     products: 0,
     categories: 0,
@@ -43,16 +45,32 @@ export default function AdminDashboard() {
           fetch('/api/admin/orders?limit=1000'),
         ]);
 
+        console.log('Response statuses:', {
+          products: productsRes.ok,
+          categories: categoriesRes.ok,
+          subcategories: subcategoriesRes.ok,
+          orders: ordersRes.ok
+        });
+
         const products = await productsRes.json();
         const categories = await categoriesRes.json();
         const subcategories = await subcategoriesRes.json();
         const ordersData = await ordersRes.json();
         const orders = ordersData.orders || [];
 
-        const totalStock = products.reduce((sum: number, p: any) => sum + (p.stock || 0), 0);
-        const visibleProducts = products.filter((p: any) => p.isVisible).length;
-        const featuredProducts = products.filter((p: any) => p.featured).length;
-        const outOfStock = products.filter((p: any) => p.stock === 0).length;
+        console.log('Raw responses:', { products, categories, subcategories, ordersData });
+
+        console.log('Dashboard data:', { 
+          products: Array.isArray(products) ? products.length : 'not array', 
+          categories: Array.isArray(categories) ? categories.length : 'not array', 
+          subcategories: Array.isArray(subcategories) ? subcategories.length : 'not array',
+          orders: orders.length 
+        });
+
+        const totalStock = (Array.isArray(products) ? products : []).reduce((sum: number, p: any) => sum + (p.stock || 0), 0);
+        const visibleProducts = (Array.isArray(products) ? products : []).filter((p: any) => p.isVisible).length;
+        const featuredProducts = (Array.isArray(products) ? products : []).filter((p: any) => p.featured).length;
+        const outOfStock = (Array.isArray(products) ? products : []).filter((p: any) => p.stock === 0).length;
 
         const totalOrders = orders.length;
         const shippedOrders = orders.filter((o: any) => o.status === 'SHIPPED' || o.status === 'DELIVERED').length;
@@ -62,9 +80,9 @@ export default function AdminDashboard() {
         const successfulPayments = orders.filter((o: any) => o.paymentStatus === 'PAID').length;
 
         setStats({
-          products: products.length,
-          categories: categories.length,
-          subcategories: subcategories.length,
+          products: Array.isArray(products) ? products.length : 0,
+          categories: Array.isArray(categories) ? categories.length : 0,
+          subcategories: Array.isArray(subcategories) ? subcategories.length : 0,
           totalStock,
           visibleProducts,
           featuredProducts,
@@ -94,14 +112,16 @@ export default function AdminDashboard() {
     { title: 'Out of Stock', value: stats.outOfStock, icon: '🚫', color: 'bg-red-500' },
     { title: 'Total Orders', value: stats.totalOrders, icon: '📋', color: 'bg-indigo-500' },
     { title: 'Shipped', value: stats.shippedOrders, icon: '🚚', color: 'bg-pink-500' },
-    { title: 'Revenue (£)', value: stats.totalRevenue.toFixed(2), icon: '💰', color: 'bg-green-600' },
+    { title: 'Revenue (₹)', value: stats.totalRevenue.toFixed(2), icon: '💰', color: 'bg-green-600' },
     { title: 'Paid Orders', value: stats.successfulPayments, icon: '✅', color: 'bg-lime-500' },
   ];
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-red-600 mb-2">Welcome to Lumo Admin</h1>
+        <h1 className="text-4xl font-bold text-red-600 mb-2">
+          Welcome, {session?.user?.name || 'Admin'}!
+        </h1>
         <p className="text-gray-600">Manage your e-commerce store</p>
       </div>
 
@@ -130,62 +150,73 @@ export default function AdminDashboard() {
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-lg shadow-md p-6 border-l-4 hover:shadow-xl transition-all transform hover:-translate-y-1"
-                  style={{ borderLeftColor: '#DC2626' }}
+                  className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-600 text-sm">{stat.title}</p>
-                      <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                      <p className="text-gray-500 text-sm font-medium">{stat.title}</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2 group-hover:text-red-600 transition-colors">{stat.value}</p>
                     </div>
-                    <div className="text-4xl bg-red-100 p-3 rounded-lg">{stat.icon}</div>
+                    <div className="text-4xl bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-xl group-hover:from-red-100 group-hover:to-red-200 transition-all duration-300 transform group-hover:scale-110">
+                      {stat.icon}
+                    </div>
                   </div>
+                  <div className="mt-4 h-1 bg-gradient-to-r from-red-200 via-red-300 to-red-200 rounded-full group-hover:from-red-500 group-hover:via-red-600 group-hover:to-red-500 transition-all duration-300"></div>
                 </div>
               );
             })}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-red-600">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Quick Actions</h2>
-              <div className="space-y-2">
+            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 hover:shadow-2xl">
+              <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
+                <span className="w-1 h-6 bg-red-600 mr-3 rounded-full"></span>
+                Quick Actions
+              </h2>
+              <div className="space-y-3">
                 <Link
                   href="/admin/products?action=new"
-                  className="block p-3 bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold transition-colors border-l-4 border-red-600"
+                  className="block p-4 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-lg text-red-700 font-semibold transition-all duration-300 border-l-4 border-red-600 hover:border-red-700 transform hover:translate-x-1 hover:shadow-md"
                 >
                   + Add New Product
                 </Link>
                 <Link
                   href="/admin/categories?action=new"
-                  className="block p-3 bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold transition-colors border-l-4 border-red-600"
+                  className="block p-4 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-lg text-red-700 font-semibold transition-all duration-300 border-l-4 border-red-600 hover:border-red-700 transform hover:translate-x-1 hover:shadow-md"
                 >
                   + Add New Category
                 </Link>
                 <Link
                   href="/admin/subcategories?action=new"
-                  className="block p-3 bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold transition-colors border-l-4 border-red-600"
+                  className="block p-4 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-lg text-red-700 font-semibold transition-all duration-300 border-l-4 border-red-600 hover:border-red-700 transform hover:translate-x-1 hover:shadow-md"
                 >
                   + Add New Subcategory
                 </Link>
                 <Link
                   href="/admin/orders"
-                  className="block p-3 bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold transition-colors border-l-4 border-red-600"
+                  className="block p-4 bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 rounded-lg text-red-700 font-semibold transition-all duration-300 border-l-4 border-red-600 hover:border-red-700 transform hover:translate-x-1 hover:shadow-md"
                 >
                   📋 Manage Orders
                 </Link>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6 border-t-4 border-red-600">
-              <h2 className="text-xl font-bold mb-4 text-gray-800">Store Info</h2>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-gray-600 text-sm">Store Name</p>
-                  <p className="text-lg font-semibold text-gray-800">Lumo - Premium Gift Shop</p>
+            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 hover:shadow-2xl">
+              <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
+                <span className="w-1 h-6 bg-red-600 mr-3 rounded-full"></span>
+                Store Info
+              </h2>
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-l-4 border-red-600">
+                  <p className="text-gray-500 text-sm font-medium">Store Name</p>
+                  <p className="text-lg font-semibold text-gray-800 mt-1">Lumo - Premium Gift Shop</p>
                 </div>
-                <div>
-                  <p className="text-gray-600 text-sm">Status</p>
-                  <p className="text-lg font-semibold text-red-600">🔴 Active</p>
+                <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border-l-4 border-green-600">
+                  <p className="text-gray-500 text-sm font-medium">Status</p>
+                  <p className="text-lg font-semibold text-green-700 mt-1 flex items-center">
+                    <span className="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                    Active
+                  </p>
                 </div>
               </div>
             </div>

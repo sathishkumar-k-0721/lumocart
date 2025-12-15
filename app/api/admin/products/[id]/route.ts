@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { MongoClient, ObjectId } from 'mongodb';
-
-const mongoUrl = process.env.DATABASE_URL!;
-const dbName = 'giftwebsite';
-
-async function getDb() {
-  const client = new MongoClient(mongoUrl);
-  await client.connect();
-  return client.db(dbName);
-}
+import { prisma } from '@/lib/prisma';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -25,10 +16,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const db = await getDb();
-    const product = await db
-      .collection('products')
-      .findOne({ _id: new ObjectId(params.id) });
+    const product = await prisma.product.findUnique({
+      where: { id: params.id },
+    });
     
     if (!product) {
       return NextResponse.json(
@@ -36,8 +26,9 @@ export async function GET(
         { status: 404 }
       );
     }
-    return NextResponse.json(product);
+    return NextResponse.json({ ...product, _id: product.id });
   } catch (error) {
+    console.error('Product GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch product' },
       { status: 500 }
@@ -56,32 +47,27 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const db = await getDb();
     
-    const updateData: any = { ...body };
-    if (body.categoryId) updateData.categoryId = new ObjectId(body.categoryId);
-    if (body.subcategoryId) updateData.subcategoryId = new ObjectId(body.subcategoryId);
-    if (body.name) updateData.slug = body.name.toLowerCase().replace(/\s+/g, '-');
+    const product = await prisma.product.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        description: body.description || '',
+        price: body.price,
+        originalPrice: body.originalPrice || null,
+        stock: body.stock,
+        categoryId: body.categoryId,
+        subcategoryId: body.subcategoryId,
+        slug: body.name.toLowerCase().replace(/\s+/g, '-'),
+        image: body.image || '',
+        isVisible: body.isVisible !== undefined ? body.isVisible : true,
+        featured: body.featured || false,
+      },
+    });
 
-    const result = await db.collection('products').updateOne(
-      { _id: new ObjectId(params.id) },
-      {
-        $set: {
-          ...updateData,
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ...product, _id: product.id });
   } catch (error) {
+    console.error('Product PUT error:', error);
     return NextResponse.json(
       { error: 'Failed to update product' },
       { status: 500 }
@@ -99,21 +85,13 @@ export async function DELETE(
   }
 
   try {
-    const db = await getDb();
-    
-    const result = await db.collection('products').deleteOne({
-      _id: new ObjectId(params.id),
+    await prisma.product.delete({
+      where: { id: params.id },
     });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Product DELETE error:', error);
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }

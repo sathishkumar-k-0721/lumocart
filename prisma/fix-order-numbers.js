@@ -1,7 +1,7 @@
 // Fix missing orderNumbers in orders before Prisma schema push
 const { MongoClient } = require('mongodb');
 
-const DATABASE_URL = 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/giftwebsite';
+const DATABASE_URL = 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/lumocart';
 
 function generateOrderNumber() {
   const timestamp = Date.now().toString().slice(-8);
@@ -12,7 +12,7 @@ function generateOrderNumber() {
 async function fixOrderNumbers() {
   console.log('🔄 Connecting to MongoDB...');
   const client = await MongoClient.connect(DATABASE_URL);
-  const db = client.db('giftwebsite');
+  const db = client.db('lumocart');
   
   try {
     // Find orders without orderNumber

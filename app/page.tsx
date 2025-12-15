@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 async function getProducts() {
   const client = new MongoClient(process.env.DATABASE_URL!);
   await client.connect();
-  const db = client.db('giftwebsite');
+  const db = client.db('lumocart');
   const products = await db
     .collection('products')
     .find({ isVisible: true, featured: true })
@@ -18,7 +18,7 @@ async function getProducts() {
 async function getCategories() {
   const client = new MongoClient(process.env.DATABASE_URL!);
   await client.connect();
-  const db = client.db('giftwebsite');
+  const db = client.db('lumocart');
   const categories = await db.collection('categories').find({}).toArray();
   await client.close();
   return categories;

@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { MongoClient, ObjectId } from 'mongodb';
-
-const mongoUrl = process.env.DATABASE_URL!;
-const dbName = 'giftwebsite';
-
-async function getDb() {
-  const client = new MongoClient(mongoUrl);
-  await client.connect();
-  return client.db(dbName);
-}
+import { prisma } from '@/lib/prisma';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -22,13 +13,13 @@ async function requireAdmin() {
 
 export async function GET(req: NextRequest) {
   try {
-    const db = await getDb();
-    const subcategories = await db
-      .collection('subcategories')
-      .find({})
-      .toArray();
-    return NextResponse.json(subcategories);
+    const subcategories = await prisma.subcategory.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    const transformed = subcategories.map(sub => ({ ...sub, _id: sub.id }));
+    return NextResponse.json(transformed);
   } catch (error) {
+    console.error('Subcategories GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch subcategories' },
       { status: 500 }
@@ -44,20 +35,20 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const db = await getDb();
     
-    const result = await db.collection('subcategories').insertOne({
-      ...body,
-      categoryId: new ObjectId(body.categoryId),
-      slug: body.name.toLowerCase().replace(/\s+/g, '-'),
-      createdAt: new Date(),
+    const subcategory = await prisma.subcategory.create({
+      data: {
+        name: body.name,
+        categoryId: body.categoryId,
+        slug: body.name.toLowerCase().replace(/\s+/g, '-'),
+        description: body.description || '',
+        image: body.image || '',
+      },
     });
 
-    return NextResponse.json(
-      { _id: result.insertedId, ...body },
-      { status: 201 }
-    );
+    return NextResponse.json({ ...subcategory, _id: subcategory.id }, { status: 201 });
   } catch (error) {
+    console.error('Subcategory POST error:', error);
     return NextResponse.json(
       { error: 'Failed to create subcategory' },
       { status: 500 }

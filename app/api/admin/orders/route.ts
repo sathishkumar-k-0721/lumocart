@@ -62,8 +62,19 @@ export async function GET(req: NextRequest) {
       prisma.order.count({ where }),
     ]);
 
+    const transformedOrders = orders.map(order => ({
+      ...order,
+      _id: order.id,
+      user: order.user ? { ...order.user, _id: order.user.id } : null,
+      items: order.items.map(item => ({
+        ...item,
+        _id: item.id,
+        product: item.product ? { ...item.product, _id: item.product.id } : null,
+      })),
+    }));
+
     return NextResponse.json({
-      orders,
+      orders: transformedOrders,
       pagination: {
         total,
         page,

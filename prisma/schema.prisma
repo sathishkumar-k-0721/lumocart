@@ -38,7 +38,7 @@ model Category {
   subcategories Subcategory[]
   products      Product[]
   createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  updatedAt     DateTime?     @updatedAt
 
   @@map("categories")
 }
@@ -54,7 +54,7 @@ model Subcategory {
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   products    Product[]
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime? @updatedAt
 
   @@unique([categoryId, slug])
   @@map("subcategories")
@@ -80,7 +80,7 @@ model Product {
   cartItems      CartItem[]
   orderItems     OrderItem[]
   createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  updatedAt      DateTime?     @updatedAt
 
   @@map("products")
 }

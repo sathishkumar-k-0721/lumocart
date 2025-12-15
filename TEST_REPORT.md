@@ -103,7 +103,7 @@ Response: 200 in 186ms (cached)
 
 ### Prisma Client
 - **Status:** ✅ Connected to MongoDB
-- **Database:** `mongodb+srv://...@cluster0.yjovwvc.mongodb.net/giftwebsite`
+- **Database:** `mongodb+srv://...@cluster0.yjovwvc.mongodb.net/lumocart`
 - **Query Performance:**
   - First load: ~7000ms (includes compilation)
   - Cached: ~69-327ms

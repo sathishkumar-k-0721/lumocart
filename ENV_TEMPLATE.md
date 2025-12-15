@@ -15,9 +15,9 @@ NEXTAUTH_URL=http://localhost:3000
 # 2. Click Database → Connect → Drivers
 # 3. Copy the Node.js connection string
 # 4. Replace <username> and <password> with your actual credentials
-# 5. Change <database> to "giftwebsite"
+# 5. Change <database> to "lumocart"
 
-DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/giftwebsite?retryWrites=true&w=majority
+DATABASE_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/lumocart?retryWrites=true&w=majority
 
 # Razorpay Configuration (Optional)
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_here
@@ -31,7 +31,7 @@ NEXTAUTH_SECRET=e4d8f2a9c1b3e5f7a9c2b4d6e8f1a3c5d7e9f1b3c5d7e9f1a3c5d7e9f1b3c5
 NEXTAUTH_URL=http://localhost:3000
 
 # Local MongoDB (Make sure mongod is running!)
-DATABASE_URL=mongodb://localhost:27017/giftwebsite
+DATABASE_URL=mongodb://localhost:27017/lumocart
 
 # Razorpay Configuration (Optional)
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_here
@@ -45,7 +45,7 @@ NEXTAUTH_SECRET=e4d8f2a9c1b3e5f7a9c2b4d6e8f1a3c5d7e9f1b3c5d7e9f1a3c5d7e9f1b3c5
 NEXTAUTH_URL=http://localhost:3000
 
 # MongoDB Atlas with explicit authentication
-DATABASE_URL=mongodb+srv://username:password@cluster0.mongodb.net/giftwebsite?retryWrites=true&w=majority&authSource=admin
+DATABASE_URL=mongodb+srv://username:password@cluster0.mongodb.net/lumocart?retryWrites=true&w=majority&authSource=admin
 
 # Razorpay Configuration (Optional)
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_here
@@ -79,7 +79,7 @@ Example: If password is `pass@word123`, use `pass%40word123`
    - `<username>` with your database user username
    - `<password>` with your database user password
    - `<cluster>` with your cluster name
-   - `myFirstDatabase` with `giftwebsite`
+   - `myFirstDatabase` with `lumocart`
 
 ### Testing Your Connection
 

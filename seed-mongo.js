@@ -25,7 +25,7 @@ async function seedDatabase() {
   try {
     console.log('🌱 Starting database seeding...\n');
     await client.connect();
-    const db = client.db('giftwebsite');
+    const db = client.db('lumocart');
 
     // Clear existing data
     console.log('🗑️  Clearing existing data...');

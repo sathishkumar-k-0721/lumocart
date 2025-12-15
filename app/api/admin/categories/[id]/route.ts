@@ -1,16 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { MongoClient, ObjectId } from 'mongodb';
-
-const mongoUrl = process.env.DATABASE_URL!;
-const dbName = 'giftwebsite';
-
-async function getDb() {
-  const client = new MongoClient(mongoUrl);
-  await client.connect();
-  return client.db(dbName);
-}
+import { prisma } from '@/lib/prisma';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -25,10 +16,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const db = await getDb();
-    const category = await db
-      .collection('categories')
-      .findOne({ _id: new ObjectId(params.id) });
+    const category = await prisma.category.findUnique({
+      where: { id: params.id },
+    });
     
     if (!category) {
       return NextResponse.json(
@@ -36,8 +26,9 @@ export async function GET(
         { status: 404 }
       );
     }
-    return NextResponse.json(category);
+    return NextResponse.json({ ...category, _id: category.id });
   } catch (error) {
+    console.error('Category GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch category' },
       { status: 500 }
@@ -56,28 +47,20 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const db = await getDb();
     
-    const result = await db.collection('categories').updateOne(
-      { _id: new ObjectId(params.id) },
-      {
-        $set: {
-          ...body,
-          slug: body.name.toLowerCase().replace(/\s+/g, '-'),
-          updatedAt: new Date(),
-        },
-      }
-    );
+    const category = await prisma.category.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        slug: body.name.toLowerCase().replace(/\s+/g, '-'),
+        description: body.description || '',
+        image: body.image || '',
+      },
+    });
 
-    if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ...category, _id: category.id });
   } catch (error) {
+    console.error('Category PUT error:', error);
     return NextResponse.json(
       { error: 'Failed to update category' },
       { status: 500 }
@@ -95,21 +78,13 @@ export async function DELETE(
   }
 
   try {
-    const db = await getDb();
-    
-    const result = await db.collection('categories').deleteOne({
-      _id: new ObjectId(params.id),
+    await prisma.category.delete({
+      where: { id: params.id },
     });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
-      );
-    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Category DELETE error:', error);
     return NextResponse.json(
       { error: 'Failed to delete category' },
       { status: 500 }

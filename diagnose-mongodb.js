@@ -15,11 +15,11 @@ console.log('=====================================\n');
 const testConnections = [
   {
     name: 'Current .env.local URL',
-    url: 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/giftwebsite?retryWrites=true&w=majority'
+    url: 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/lumocart?retryWrites=true&w=majority'
   },
   {
     name: 'Current URL without query params',
-    url: 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/giftwebsite'
+    url: 'mongodb+srv://plsathish0721_db_user:zFIBbJV1IjeOI3xj@cluster0.yjovwvc.mongodb.net/lumocart'
   },
   {
     name: 'Test with admin database',
@@ -82,7 +82,7 @@ async function runDiagnostics() {
   console.log('1. ❌ MongoDB credentials are INVALID');
   console.log('   - Username: plsathish0721_db_user');
   console.log('   - Password: zFIBbJV1IjeOI3xj');
-  console.log('   - Database: giftwebsite');
+  console.log('   - Database: lumocart');
   console.log('   - Cluster: cluster0.yjovwvc.mongodb.net\n');
   
   console.log('🔧 SOLUTIONS:\n');
@@ -100,7 +100,7 @@ async function runDiagnostics() {
   console.log('1. Install MongoDB Community Edition');
   console.log('2. Start MongoDB: mongod');
   console.log('3. Update .env.local:');
-  console.log('   DATABASE_URL=mongodb://localhost:27017/giftwebsite');
+  console.log('   DATABASE_URL=mongodb://localhost:27017/lumocart');
   console.log('4. Restart the dev server\n');
   
   console.log('Option 3: Use MongoDB Atlas Test Cluster');
