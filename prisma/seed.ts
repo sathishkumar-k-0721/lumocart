@@ -8,9 +8,7 @@ async function main() {
 
   // Clear existing data
   console.log('🗑️  Clearing existing data...');
-  await prisma.orderItem.deleteMany({});
   await prisma.order.deleteMany({});
-  await prisma.cartItem.deleteMany({});
   await prisma.cart.deleteMany({});
   await prisma.product.deleteMany({});
   await prisma.subcategory.deleteMany({});
