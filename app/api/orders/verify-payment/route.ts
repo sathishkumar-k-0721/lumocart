@@ -38,31 +38,42 @@ export async function POST(req: NextRequest) {
         status: 'PROCESSING',
         paymentId: razorpay_payment_id,
       },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
     });
 
-    // Update product stock
-    for (const item of order.items) {
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
-          },
-        },
+    // Fetch product details for items
+    const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+    const itemsWithProducts = await Promise.all(
+      items.map(async (item) => {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+        });
+        return {
+          ...item,
+          product,
+        };
+      })
+    );
+
+    const orderWithProducts = {
+      ...order,
+      items: itemsWithProducts,
+    };
+
+    // Clear user's cart after successful payment
+    const cart = await prisma.cart.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (cart) {
+      await prisma.cartItem.deleteMany({
+        where: { cartId: cart.id },
       });
     }
 
     return NextResponse.json({
       success: true,
       message: 'Payment verified successfully',
-      order,
+      order: orderWithProducts,
     });
   } catch (error: any) {
     if (error.message.includes('Unauthorized')) {

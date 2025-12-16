@@ -42,18 +42,6 @@ export async function GET(req: NextRequest) {
               email: true,
             },
           },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  image: true,
-                },
-              },
-            },
-          },
         },
         skip,
         take: limit,
@@ -62,9 +50,37 @@ export async function GET(req: NextRequest) {
       prisma.order.count({ where }),
     ]);
 
+    // Fetch product details for all items
+    const ordersWithProducts = await Promise.all(
+      orders.map(async (order) => {
+        const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+        const itemsWithProducts = await Promise.all(
+          items.map(async (item) => {
+            const product = await prisma.product.findUnique({
+              where: { id: item.productId },
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                image: true,
+              },
+            });
+            return {
+              ...item,
+              product,
+            };
+          })
+        );
+        return {
+          ...order,
+          items: itemsWithProducts,
+        };
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      orders,
+      orders: ordersWithProducts,
       pagination: {
         total,
         page,
@@ -96,37 +112,44 @@ export async function POST(req: NextRequest) {
     
     const { shippingAddress, billingAddress, notes, paymentMethod = 'online' } = body;
 
-    // Get user's cart
+    // Get user's cart with embedded items
     const cart = await prisma.cart.findUnique({
       where: { userId: user.id },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-      },
     });
 
-    if (!cart || cart.items.length === 0) {
+    if (!cart || (cart.items as any[]).length === 0) {
       return NextResponse.json(
         { error: 'Cart is empty' },
         { status: 400 }
       );
     }
 
-    // Validate stock
-    for (const item of cart.items) {
-      if (item.product.stock < item.quantity) {
+    const cartItems = cart.items as any[];
+    
+    // Get product details and validate stock
+    const productIds = cartItems.map((item: any) => item.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+    });
+
+    for (const item of cartItems) {
+      const product = products.find(p => p.id === item.productId);
+      if (!product) {
         return NextResponse.json(
-          { error: `Insufficient stock for ${item.product.name}` },
+          { error: `Product not found` },
+          { status: 400 }
+        );
+      }
+      if (product.stock < item.quantity) {
+        return NextResponse.json(
+          { error: `Insufficient stock for ${product.name}` },
           { status: 400 }
         );
       }
     }
 
     // Calculate total
-    let totalAmount = cart.items.reduce(
+    let totalAmount = cartItems.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
@@ -145,27 +168,25 @@ export async function POST(req: NextRequest) {
 
     // Create Razorpay order only for online payment
     if (paymentMethod === 'online') {
-      if (!razorpay) {
-        return NextResponse.json(
-          { error: 'Online payment is not configured. Please use Cash on Delivery.' },
-          { status: 503 }
-        );
-      }
-      
-      try {
-        razorpayOrder = await razorpay.orders.create({
-          amount: Math.round(totalAmount * 100), // Convert to paise
-          currency: 'INR',
-          receipt: orderNumber,
-        });
-      } catch (error) {
-        console.error('Razorpay order creation failed:', error);
-        return NextResponse.json(
-          { error: 'Payment gateway error. Please try again or use COD.' },
-          { status: 500 }
-        );
+      if (razorpay) {
+        try {
+          razorpayOrder = await razorpay.orders.create({
+            amount: Math.round(totalAmount * 100),
+            currency: 'INR',
+            receipt: orderNumber,
+          });
+        } catch (error) {
+          console.error('Razorpay order creation failed:', error);
+        }
       }
     }
+
+    // Prepare items as Json array
+    const orderItems = cartItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      price: item.price,
+    }));
 
     // Create order in database
     const order = await prisma.order.create({
@@ -174,61 +195,63 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         totalAmount,
         razorpayOrderId: razorpayOrder?.id,
-        paymentStatus: paymentMethod === 'cod' ? 'PENDING' : 'PENDING',
+        paymentStatus: 'PENDING',
         paymentMethod: paymentMethod,
         status: 'PENDING',
         shippingAddress,
         billingAddress,
         notes,
-        items: {
-          create: cart.items.map(item => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-        },
-      },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
+        items: orderItems,
       },
     });
 
-    // For COD, update stock immediately and mark order as confirmed
-    if (paymentMethod === 'cod') {
-      // Update stock
-      for (const item of cart.items) {
-        await prisma.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
+    // Update stock for all orders (both COD and online payment)
+    for (const item of cartItems) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity,
           },
-        });
-      }
+        },
+      });
+    }
 
-      // Update order status
+    // For COD, update order status to PROCESSING immediately and clear cart
+    if (paymentMethod === 'cod') {
       await prisma.order.update({
         where: { id: order.id },
         data: {
           status: 'PROCESSING',
         },
       });
-    }
 
-    // Clear cart
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
+      // Clear cart only for COD
+      await prisma.cart.update({
+        where: { id: cart.id },
+        data: { items: [] },
+      });
+    }
+    // For online payment, cart will be cleared after successful payment verification
+
+    // Fetch product details for response
+    const itemsWithProducts = orderItems.map((item) => {
+      const product = products.find(p => p.id === item.productId);
+      return {
+        ...item,
+        product,
+      };
     });
+
+    const orderWithProducts = {
+      ...order,
+      items: itemsWithProducts,
+    };
 
     return NextResponse.json({
       success: true,
       message: 'Order created successfully',
-      order,
+      order: orderWithProducts,
       razorpayOrder: razorpayOrder ? {
         id: razorpayOrder.id,
         amount: razorpayOrder.amount,

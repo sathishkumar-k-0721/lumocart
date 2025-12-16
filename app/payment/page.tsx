@@ -147,21 +147,44 @@ export default function PaymentPage() {
         return;
       }
 
-      // Check if Razorpay order was created
-      if (!orderData.razorpayOrder) {
-        toast.error('Payment gateway not available. Please use Cash on Delivery.');
+      // For online payment - use Razorpay
+      // IMPORTANT: Add your Razorpay Test Key ID here or in .env file
+      const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_CHANGE_THIS_KEY';
+
+      if (razorpayKeyId === 'rzp_test_CHANGE_THIS_KEY') {
+        toast.error('Please configure Razorpay Key ID. Check console for instructions.', { duration: 5000 });
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('⚠️  RAZORPAY KEY NOT CONFIGURED');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('');
+        console.error('To enable Razorpay payments:');
+        console.error('');
+        console.error('1. Get your Test Key from: https://dashboard.razorpay.com/app/keys');
+        console.error('2. Add to .env file:');
+        console.error('   NEXT_PUBLIC_RAZORPAY_KEY_ID="rzp_test_YOUR_KEY_HERE"');
+        console.error('');
+        console.error('OR');
+        console.error('');
+        console.error('3. Temporarily add it in app/payment/page.tsx line 155:');
+        console.error('   const razorpayKeyId = "rzp_test_YOUR_KEY_HERE";');
+        console.error('');
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         setProcessing(false);
         return;
       }
 
+      // Create Razorpay order amount (use actual amount or demo amount)
+      const razorpayAmount = orderData.razorpayOrder?.amount || Math.round(total * 100);
+      const razorpayOrderId = orderData.razorpayOrder?.id || `order_${Date.now()}`;
+
       // Initialize Razorpay for online payment
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.razorpayOrder.amount,
-        currency: orderData.razorpayOrder.currency,
-        name: 'Lumo',
+        key: razorpayKeyId,
+        amount: razorpayAmount,
+        currency: orderData.razorpayOrder?.currency || 'INR',
+        name: 'Lumocart',
         description: `Order #${orderData.order.orderNumber}`,
-        order_id: orderData.razorpayOrder.id,
+        order_id: razorpayOrderId,
         handler: async function (response: any) {
           try {
             // Verify payment
@@ -170,9 +193,9 @@ export default function PaymentPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 orderId: orderData.order.id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
               }),
             });
 
@@ -224,7 +247,15 @@ export default function PaymentPage() {
     <>
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
-        onLoad={() => setRazorpayLoaded(true)}
+        onLoad={() => {
+          console.log('Razorpay script loaded successfully');
+          setRazorpayLoaded(true);
+        }}
+        onError={(e) => {
+          console.error('Failed to load Razorpay script:', e);
+          toast.error('Failed to load payment gateway. Please refresh the page.');
+        }}
+        strategy="lazyOnload"
       />
 
       <div className="container mx-auto px-14 md:px-20 py-8">
@@ -241,33 +272,6 @@ export default function PaymentPage() {
                 <CardTitle className="text-gray-900">Select Payment Method</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Razorpay Loading Indicator */}
-                {!razorpayLoaded && selectedPayment === 'online' && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-700">
-                    <svg
-                      className="h-4 w-4 animate-spin"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Loading payment gateway...</span>
-                  </div>
-                )}
-
                 {/* Online Payment */}
                 <div
                   onClick={() => setSelectedPayment('online')}

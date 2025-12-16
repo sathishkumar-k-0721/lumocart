@@ -77,8 +77,6 @@ model Product {
   stock          Int           @default(0)
   featured       Boolean       @default(false)
   isVisible      Boolean       @default(true)
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime?     @updatedAt
 
@@ -87,29 +85,14 @@ model Product {
 
 // Cart Model
 model Cart {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @unique @db.ObjectId
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  @@map("carts")
-}
-
-// CartItem Model
-model CartItem {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  cartId    String   @db.ObjectId
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productId String   @db.ObjectId
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int      @default(1)
-  price     Float
+  userId    String   @unique @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     Json[]   @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("cart_items")
+  @@map("carts")
 }
 
 // Order Model
@@ -118,7 +101,7 @@ model Order {
   orderNumber     String        @unique
   userId          String        @db.ObjectId
   user            User          @relation(fields: [userId], references: [id])
-  items           OrderItem[]
+  items           Json[]        @default([])
   totalAmount     Float
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
@@ -147,19 +130,4 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
-}
-
-// OrderItem Model
-model OrderItem {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  orderId   String   @db.ObjectId
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String   @db.ObjectId
-  product   Product  @relation(fields: [productId], references: [id])
-  quantity  Int
-  price     Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("order_items")
 }

@@ -16,26 +16,43 @@ export function Header() {
   const [cartItemCount, setCartItemCount] = React.useState(0);
 
   // Fetch cart count
-  React.useEffect(() => {
-    const fetchCartCount = async () => {
-      if (session) {
-        try {
-          const res = await fetch('/api/cart');
-          if (res.ok) {
-            const data = await res.json();
-            const count = data.cart?.items?.length || 0;
-            setCartItemCount(count);
-          }
-        } catch (error) {
-          console.error('Failed to fetch cart:', error);
+  const fetchCartCount = React.useCallback(async () => {
+    if (session) {
+      try {
+        const res = await fetch('/api/cart');
+        if (res.ok) {
+          const data = await res.json();
+          const count = data.cart?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+          setCartItemCount(count);
         }
-      } else {
-        setCartItemCount(0);
+      } catch (error) {
+        console.error('Failed to fetch cart:', error);
       }
+    } else {
+      setCartItemCount(0);
+    }
+  }, [session]);
+
+  React.useEffect(() => {
+    fetchCartCount();
+  }, [fetchCartCount]);
+
+  // Refresh cart count when pathname changes (e.g., after adding to cart)
+  React.useEffect(() => {
+    fetchCartCount();
+  }, [pathname, fetchCartCount]);
+
+  // Listen for custom cart update events
+  React.useEffect(() => {
+    const handleCartUpdate = () => {
+      fetchCartCount();
     };
 
-    fetchCartCount();
-  }, [session]);
+    window.addEventListener('cartUpdated', handleCartUpdate);
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, [fetchCartCount]);
 
   const navigation = [
     { name: 'Home', href: '/' },
@@ -92,7 +109,7 @@ export function Header() {
         <div className="hidden md:flex items-center gap-2">
           {/* Cart */}
           <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative hover:bg-red-800 text-white transition-all duration-300">
+            <Button variant="ghost" size="icon" className="relative hover:bg-white hover:text-red-600 text-white transition-all duration-300">
               <FiShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-red-600 text-xs font-bold">
@@ -109,16 +126,16 @@ export function Header() {
             <div className="relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center space-x-3 bg-red-800 hover:bg-red-900 px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center space-x-3 hover:bg-white hover:text-red-600 px-4 py-2 rounded-lg transition-colors group"
               >
-                <div className="w-9 h-9 bg-white text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="w-9 h-9 bg-white text-red-600 rounded-full flex items-center justify-center font-bold text-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
                   {session.user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <div className="hidden lg:block text-left">
+                <div className="hidden lg:block text-left text-white group-hover:text-red-600 transition-colors">
                   <p className="text-sm font-semibold">{session.user?.name || 'User'}</p>
-                  <p className="text-xs text-red-200">{session.user?.email}</p>
+                  <p className="text-xs opacity-80">{session.user?.email}</p>
                 </div>
-                <span className="text-xl">▼</span>
+                <span className="text-xl text-white group-hover:text-red-600 transition-colors">▼</span>
               </button>
 
               {/* Dropdown Menu */}

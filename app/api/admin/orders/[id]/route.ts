@@ -40,22 +40,35 @@ export async function PUT(
             email: true,
           },
         },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-                price: true,
-              },
-            },
-          },
-        },
       },
     });
 
-    return NextResponse.json(order);
+    // Fetch product details for items
+    const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+    const itemsWithProducts = await Promise.all(
+      items.map(async (item) => {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            price: true,
+          },
+        });
+        return {
+          ...item,
+          product,
+        };
+      })
+    );
+
+    const orderWithProducts = {
+      ...order,
+      items: itemsWithProducts,
+    };
+
+    return NextResponse.json(orderWithProducts);
   } catch (error: any) {
     console.error('Failed to update order:', error);
     if (error.code === 'P2025') {
@@ -91,18 +104,6 @@ export async function GET(
             email: true,
           },
         },
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-                price: true,
-              },
-            },
-          },
-        },
       },
     });
 
@@ -113,7 +114,32 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(order);
+    // Fetch product details for items
+    const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+    const itemsWithProducts = await Promise.all(
+      items.map(async (item) => {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            id: true,
+            name: true,
+            image: true,
+            price: true,
+          },
+        });
+        return {
+          ...item,
+          product,
+        };
+      })
+    );
+
+    const orderWithProducts = {
+      ...order,
+      items: itemsWithProducts,
+    };
+
+    return NextResponse.json(orderWithProducts);
   } catch (error) {
     console.error('Failed to fetch order:', error);
     return NextResponse.json(

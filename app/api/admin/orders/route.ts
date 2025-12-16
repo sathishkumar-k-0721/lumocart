@@ -40,18 +40,6 @@ export async function GET(req: NextRequest) {
               email: true,
             },
           },
-          items: {
-            include: {
-              product: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
-                  price: true,
-                },
-              },
-            },
-          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -62,19 +50,39 @@ export async function GET(req: NextRequest) {
       prisma.order.count({ where }),
     ]);
 
-    const transformedOrders = orders.map(order => ({
-      ...order,
-      _id: order.id,
-      user: order.user ? { ...order.user, _id: order.user.id } : null,
-      items: order.items.map(item => ({
-        ...item,
-        _id: item.id,
-        product: item.product ? { ...item.product, _id: item.product.id } : null,
-      })),
-    }));
+    // Fetch product details for all items
+    const ordersWithProducts = await Promise.all(
+      orders.map(async (order) => {
+        const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+        const itemsWithProducts = await Promise.all(
+          items.map(async (item) => {
+            const product = await prisma.product.findUnique({
+              where: { id: item.productId },
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                price: true,
+              },
+            });
+            return {
+              ...item,
+              id: item.productId, // Use productId as item id for compatibility
+              product: product ? { ...product, _id: product.id } : null,
+            };
+          })
+        );
+        return {
+          ...order,
+          _id: order.id,
+          user: order.user ? { ...order.user, _id: order.user.id } : null,
+          items: itemsWithProducts,
+        };
+      })
+    );
 
     return NextResponse.json({
-      orders: transformedOrders,
+      orders: ordersWithProducts,
       pagination: {
         total,
         page,

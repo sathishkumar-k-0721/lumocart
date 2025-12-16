@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingPage } from '@/components/ui/loading';
 import toast from 'react-hot-toast';
-import { FiPackage, FiCheckCircle, FiTruck, FiClock, FiMapPin } from 'react-icons/fi';
+import { FiPackage, FiCheckCircle, FiTruck, FiClock, FiMapPin, FiShoppingBag, FiCreditCard, FiX, FiRotateCw, FiArrowLeft, FiPrinter } from 'react-icons/fi';
 
 interface Order {
   id: string;
@@ -85,6 +85,36 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     fetchOrder();
   }, [session, status, router, params.id]);
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'DELIVERED':
+        return 'border-green-500 bg-green-50 text-green-700';
+      case 'SHIPPED':
+        return 'border-blue-500 bg-blue-50 text-blue-700';
+      case 'PROCESSING':
+        return 'border-orange-500 bg-orange-50 text-orange-700';
+      case 'CANCELLED':
+        return 'border-red-500 bg-red-50 text-red-700';
+      default:
+        return 'border-gray-400 bg-gray-50 text-gray-700';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'DELIVERED':
+        return <FiCheckCircle className="h-5 w-5" />;
+      case 'SHIPPED':
+        return <FiTruck className="h-5 w-5" />;
+      case 'PROCESSING':
+        return <FiRotateCw className="h-5 w-5" />;
+      case 'CANCELLED':
+        return <FiX className="h-5 w-5" />;
+      default:
+        return <FiClock className="h-5 w-5" />;
+    }
+  };
+
   if (status === 'loading' || loading) {
     return <LoadingPage />;
   }
@@ -93,43 +123,17 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     return null;
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DELIVERED':
-        return 'text-green-600 bg-green-50 border-green-200';
-      case 'SHIPPED':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'PROCESSING':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'CANCELLED':
-        return 'text-red-600 bg-red-50 border-red-200';
-      default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'DELIVERED':
-        return <FiCheckCircle className="h-6 w-6" />;
-      case 'SHIPPED':
-        return <FiTruck className="h-6 w-6" />;
-      case 'PROCESSING':
-        return <FiClock className="h-6 w-6" />;
-      default:
-        return <FiPackage className="h-6 w-6" />;
-    }
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-14 md:px-20 py-8">
       {/* Header */}
       <div className="mb-8">
+        <div className="border-t-4 border-red-600 mb-4"></div>
         <Link
           href="/orders"
-          className="mb-4 inline-flex items-center text-sm text-blue-600 hover:underline"
+          className="mb-4 inline-flex items-center text-sm text-red-600 hover:text-red-700 font-semibold"
         >
-          ← Back to Orders
+          <FiArrowLeft className="mr-2 h-4 w-4" />
+          Back to Orders
         </Link>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -148,7 +152,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             </p>
           </div>
           <div
-            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 font-semibold ${getStatusColor(
+            className={`inline-flex items-center gap-2 rounded-full border-2 px-5 py-2.5 font-semibold shadow-sm ${getStatusColor(
               order.status
             )}`}
           >
@@ -162,18 +166,21 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
         {/* Order Details */}
         <div className="lg:col-span-2 space-y-6">
           {/* Order Items */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Items</CardTitle>
+          <Card className="border-gray-200 shadow-md">
+            <CardHeader className="bg-gradient-to-r from-red-50 to-red-100 border-b border-red-200">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <FiShoppingBag className="h-5 w-5 text-red-600" />
+                Order Items
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="divide-y">
+            <CardContent className="pt-6">
+              <div className="divide-y divide-gray-200">
                 {order.items.map((item, index) => (
-                  <div key={index} className="py-4 first:pt-0 last:pb-0">
+                  <div key={index} className="py-5 first:pt-0 last:pb-0">
                     <div className="flex gap-4">
                       <Link
                         href={`/products/${item.product.slug}`}
-                        className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100"
+                        className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 border border-gray-200 hover:border-red-500 transition-colors"
                       >
                         <Image
                           src={item.product.images[0] || '/placeholder.png'}
@@ -186,15 +193,19 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                         <div>
                           <Link
                             href={`/products/${item.product.slug}`}
-                            className="font-medium text-gray-900 hover:text-blue-600"
+                            className="font-semibold text-gray-900 hover:text-red-600 transition-colors"
                           >
                             {item.product.name}
                           </Link>
-                          <p className="mt-1 text-sm text-gray-600">
-                            Quantity: {item.quantity}
-                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-sm font-medium text-gray-700">
+                              Qty: {item.quantity}
+                            </span>
+                            <span className="text-sm text-gray-600">×</span>
+                            <span className="text-sm text-gray-600">₹{item.price.toFixed(2)}</span>
+                          </div>
                         </div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="text-lg font-bold text-red-600">
                           ₹{(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
@@ -206,59 +217,63 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           </Card>
 
           {/* Shipping Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FiMapPin className="h-5 w-5" />
+          <Card className="border-gray-200 shadow-md">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <FiTruck className="h-5 w-5 text-blue-600" />
                 Shipping Address
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1 text-sm">
-                <p className="font-medium text-gray-900">
+            <CardContent className="pt-6">
+              <div className="space-y-2 text-sm">
+                <p className="font-bold text-gray-900 text-base">
                   {order.shippingAddress.fullName}
                 </p>
-                <p className="text-gray-600">{order.shippingAddress.phone}</p>
-                <p className="text-gray-600">
-                  {order.shippingAddress.addressLine1}
-                </p>
-                {order.shippingAddress.addressLine2 && (
+                <p className="text-gray-700 font-medium">{order.shippingAddress.phone}</p>
+                <div className="pt-2 border-t border-gray-200">
                   <p className="text-gray-600">
-                    {order.shippingAddress.addressLine2}
+                    {order.shippingAddress.addressLine1}
                   </p>
-                )}
-                <p className="text-gray-600">
-                  {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
-                  {order.shippingAddress.pincode}
-                </p>
+                  {order.shippingAddress.addressLine2 && (
+                    <p className="text-gray-600">
+                      {order.shippingAddress.addressLine2}
+                    </p>
+                  )}
+                  <p className="text-gray-600">
+                    {order.shippingAddress.city}, {order.shippingAddress.state}{' '}
+                    {order.shippingAddress.pincode}
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Billing Address */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FiMapPin className="h-5 w-5" />
+          <Card className="border-gray-200 shadow-md">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+              <CardTitle className="flex items-center gap-2 text-gray-900">
+                <FiCreditCard className="h-5 w-5 text-green-600" />
                 Billing Address
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1 text-sm">
-                <p className="font-medium text-gray-900">
+            <CardContent className="pt-6">
+              <div className="space-y-2 text-sm">
+                <p className="font-bold text-gray-900 text-base">
                   {order.billingAddress.fullName}
                 </p>
-                <p className="text-gray-600">{order.billingAddress.phone}</p>
-                <p className="text-gray-600">{order.billingAddress.addressLine1}</p>
-                {order.billingAddress.addressLine2 && (
+                <p className="text-gray-700 font-medium">{order.billingAddress.phone}</p>
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-gray-600">{order.billingAddress.addressLine1}</p>
+                  {order.billingAddress.addressLine2 && (
+                    <p className="text-gray-600">
+                      {order.billingAddress.addressLine2}
+                    </p>
+                  )}
                   <p className="text-gray-600">
-                    {order.billingAddress.addressLine2}
+                    {order.billingAddress.city}, {order.billingAddress.state}{' '}
+                    {order.billingAddress.pincode}
                   </p>
-                )}
-                <p className="text-gray-600">
-                  {order.billingAddress.city}, {order.billingAddress.state}{' '}
-                  {order.billingAddress.pincode}
-                </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -266,31 +281,38 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
         {/* Order Summary */}
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+          <Card className="border-gray-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white">
+              <CardTitle className="flex items-center gap-2">
+                <FiPackage className="h-5 w-5" />
+                Order Summary
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               {/* Payment Status */}
-              <div>
-                <span className="text-sm text-gray-600">Payment Status</span>
-                <p
-                  className={`mt-1 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
-                    order.paymentStatus === 'PAID'
-                      ? 'bg-green-100 text-green-700'
-                      : order.paymentStatus === 'PENDING'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}
-                >
-                  {order.paymentStatus}
-                </p>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <span className="text-sm text-gray-600 font-medium">Payment Status</span>
+                <div className="mt-2">
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm ${
+                      order.paymentStatus === 'PAID'
+                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white'
+                        : order.paymentStatus === 'PENDING'
+                        ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white'
+                        : 'bg-gradient-to-r from-red-600 to-red-700 text-white'
+                    }`}
+                  >
+                    <FiCheckCircle className="h-4 w-4" />
+                    {order.paymentStatus}
+                  </span>
+                </div>
               </div>
 
               {/* Payment Method */}
-              <div>
-                <span className="text-sm text-gray-600">Payment Method</span>
-                <p className="mt-1 font-medium text-gray-900 capitalize">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <span className="text-sm text-blue-700 font-medium">Payment Method</span>
+                <p className="mt-2 font-bold text-gray-900 flex items-center gap-2">
+                  <FiCreditCard className="h-5 w-5 text-blue-600" />
                   {order.paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : 
                    order.paymentMethod === 'online' ? 'Online Payment' : 
                    order.paymentMethod || 'N/A'}
@@ -298,37 +320,39 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </div>
 
               {/* Total */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span>₹{order.totalAmount.toFixed(2)}</span>
+              <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-4 border-2 border-red-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-gray-900">Total Amount</span>
+                  <span className="text-2xl font-bold text-red-600">₹{order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="space-y-2 border-t pt-4">
+              <div className="space-y-3 border-t pt-4">
                 <Link href="/products">
-                  <Button variant="outline" className="w-full">
+                  <Button className="w-full bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white hover:from-red-700 hover:via-red-800 hover:to-red-900 shadow-md">
+                    <FiShoppingBag className="mr-2 h-4 w-4" />
                     Continue Shopping
                   </Button>
                 </Link>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-red-600 text-red-600 hover:bg-red-50"
                   onClick={() => window.print()}
                 >
+                  <FiPrinter className="mr-2 h-4 w-4" />
                   Print Order
                 </Button>
               </div>
 
               {/* Help */}
-              <div className="border-t pt-4 text-sm text-gray-600">
-                <p className="mb-2 font-medium">Need help?</p>
+              <div className="border-t pt-4 text-sm text-gray-600 bg-gray-50 rounded-lg p-4">
+                <p className="mb-2 font-bold text-gray-900">Need help?</p>
                 <p>
                   Contact us at{' '}
                   <a
                     href="mailto:support@lumo.com"
-                    className="text-blue-600 hover:underline"
+                    className="text-red-600 hover:text-red-700 font-semibold hover:underline"
                   >
                     support@lumo.com
                   </a>

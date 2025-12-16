@@ -15,27 +15,38 @@ export async function GET(
         id: params.id,
         userId: user.id, // Users can only see their own orders
       },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                images: true,
-              },
-            },
-          },
-        },
-      },
     });
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ order });
+    // Fetch product details for items
+    const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+    const itemsWithProducts = await Promise.all(
+      items.map(async (item) => {
+        const product = await prisma.product.findUnique({
+          where: { id: item.productId },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            images: true,
+          },
+        });
+        return {
+          ...item,
+          product,
+        };
+      })
+    );
+
+    const orderWithProducts = {
+      ...order,
+      items: itemsWithProducts,
+    };
+
+    return NextResponse.json({ order: orderWithProducts });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

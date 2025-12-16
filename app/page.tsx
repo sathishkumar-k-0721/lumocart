@@ -57,6 +57,8 @@ export default function HomePage() {
 
       if (res.ok) {
         toast.success('Added to cart!');
+        // Trigger cart update event
+        window.dispatchEvent(new Event('cartUpdated'));
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to add to cart');

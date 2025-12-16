@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag } from 'react-icons/fi';
 
 interface CartItem {
-  id: string;
+  productId: string;
   product: {
     id: string;
     name: string;
@@ -23,6 +23,7 @@ interface CartItem {
     stock: number;
   };
   quantity: number;
+  price: number;
 }
 
 interface Cart {
@@ -62,10 +63,10 @@ export default function CartPage() {
     fetchCart();
   }, [session, status, router]);
 
-  const updateQuantity = async (itemId: string, productId: string, newQuantity: number) => {
+  const updateQuantity = async (productId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
 
-    setUpdatingItems(prev => new Set(prev).add(itemId));
+    setUpdatingItems(prev => new Set(prev).add(productId));
 
     try {
       // Update locally first for immediate feedback
@@ -73,16 +74,15 @@ export default function CartPage() {
         setCart({
           ...cart,
           items: cart.items.map(item => 
-            item.id === itemId ? { ...item, quantity: newQuantity } : item
+            item.productId === productId ? { ...item, quantity: newQuantity } : item
           ),
         });
       }
 
-      const res = await fetch('/api/cart', {
-        method: 'POST',
+      const res = await fetch(`/api/cart/${productId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productId,
           quantity: newQuantity,
         }),
       });
@@ -92,6 +92,9 @@ export default function CartPage() {
         await fetchCart();
         const data = await res.json();
         toast.error(data.error || 'Failed to update quantity');
+      } else {
+        // Trigger cart update event
+        window.dispatchEvent(new Event('cartUpdated'));
       }
     } catch (error) {
       // Revert on error
@@ -100,19 +103,19 @@ export default function CartPage() {
     } finally {
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(itemId);
+        newSet.delete(productId);
         return newSet;
       });
     }
   };
 
-  const removeItem = async (itemId: string) => {
+  const removeItem = async (productId: string) => {
     if (!cart) return;
 
-    setUpdatingItems(prev => new Set(prev).add(itemId));
+    setUpdatingItems(prev => new Set(prev).add(productId));
 
     try {
-      const res = await fetch(`/api/cart/${itemId}`, {
+      const res = await fetch(`/api/cart/${productId}`, {
         method: 'DELETE',
       });
 
@@ -120,9 +123,11 @@ export default function CartPage() {
         // Update cart locally after successful deletion
         setCart({
           ...cart,
-          items: cart.items.filter(item => item.id !== itemId),
+          items: cart.items.filter(item => item.productId !== productId),
         });
         toast.success('Item removed from cart');
+        // Trigger cart update event
+        window.dispatchEvent(new Event('cartUpdated'));
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to remove item');
@@ -217,11 +222,11 @@ export default function CartPage() {
             <CardContent>
               <div className="divide-y">
                 {cart.items.map((item) => {
-                  const isUpdating = updatingItems.has(item.id);
+                  const isUpdating = updatingItems.has(item.productId);
                   
                   return (
                     <div
-                      key={item.id}
+                      key={item.productId}
                       className={`py-6 first:pt-0 last:pb-0 ${
                         isUpdating ? 'opacity-50' : ''
                       }`}
@@ -268,7 +273,6 @@ export default function CartPage() {
                                 className="h-8 w-8"
                                 onClick={() =>
                                   updateQuantity(
-                                    item.id,
                                     item.product.id,
                                     item.quantity - 1
                                   )
@@ -286,7 +290,6 @@ export default function CartPage() {
                                 className="h-8 w-8"
                                 onClick={() =>
                                   updateQuantity(
-                                    item.id,
                                     item.product.id,
                                     item.quantity + 1
                                   )
@@ -302,7 +305,7 @@ export default function CartPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.productId)}
                               disabled={isUpdating}
                               className="text-red-600 hover:text-red-700"
                             >

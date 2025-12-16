@@ -81,16 +81,16 @@ export default function AdminLayout({
             <div className="hidden md:block relative">
               <button
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center space-x-3 bg-red-800 hover:bg-red-900 px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center space-x-3 hover:bg-white hover:text-red-600 px-4 py-2 rounded-lg transition-colors group"
               >
-                <div className="w-9 h-9 bg-white text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <div className="w-9 h-9 bg-white text-red-600 rounded-full flex items-center justify-center font-bold text-lg group-hover:bg-red-600 group-hover:text-white transition-colors">
                   {session.user?.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
-                <div className="hidden lg:block text-left">
+                <div className="hidden lg:block text-left text-white group-hover:text-red-600 transition-colors">
                   <p className="text-sm font-semibold">{session.user?.name || 'Admin'}</p>
-                  <p className="text-xs text-red-200">{session.user?.email}</p>
+                  <p className="text-xs opacity-80">{session.user?.email}</p>
                 </div>
-                <span className="text-xl">▼</span>
+                <span className="text-xl text-white group-hover:text-red-600 transition-colors">▼</span>
               </button>
 
               {/* Dropdown Menu */}
