@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 interface Category {
   _id: string;
@@ -17,6 +18,7 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   stock: number;
   categoryId: string;
   subcategoryId: string;
@@ -30,6 +32,7 @@ interface Product {
 export default function ProductsPage() {
   const formRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -84,6 +87,17 @@ export default function ProductsPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    // Check if action=new is in URL and open the form
+    if (searchParams.get('action') === 'new') {
+      setShowForm(true);
+      // Scroll to form after a brief delay
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  }, [searchParams]);
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -115,6 +129,9 @@ export default function ProductsPage() {
 
       const productData = {
         ...formData,
+        price: Number(formData.price) || 0,
+        originalPrice: Number(formData.originalPrice) || 0,
+        stock: Number(formData.stock) || 0,
         image: productImages[0] || '',
         images: productImages,
       };
@@ -161,7 +178,7 @@ export default function ProductsPage() {
       name: product.name,
       description: product.description || '',
       price: product.price,
-      originalPrice: 0,
+      originalPrice: product.originalPrice || 0,
       stock: product.stock,
       categoryId: product.categoryId,
       subcategoryId: product.subcategoryId,
@@ -321,8 +338,8 @@ export default function ProductsPage() {
           }}
           className="whitespace-nowrap px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-lg rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center gap-2"
         >
-          <span className="text-2xl">{showForm ? '✕' : '➕'}</span>
-          <span>{showForm ? 'Cancel' : 'Add New Product'}</span>
+          <span className="text-2xl">➕</span>
+          <span>Add New Product</span>
         </button>
       </div>
 
@@ -364,8 +381,12 @@ export default function ProductsPage() {
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.originalPrice}
-                  onChange={(e) => setFormData({ ...formData, originalPrice: parseFloat(e.target.value) })}
+                  value={formData.originalPrice || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numValue = value ? parseFloat(value) : 0;
+                    setFormData({ ...formData, originalPrice: isNaN(numValue) ? 0 : numValue });
+                  }}
                   className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Optional"
                 />
@@ -530,20 +551,46 @@ export default function ProductsPage() {
               </label>
             </div>
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded hover:from-red-600 hover:to-red-700 font-bold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? '⏳ Saving...' : (editingId ? '✅ Update Product' : '✨ Create Product')}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                  setFormData({
+                    name: '',
+                    description: '',
+                    price: 0,
+                    originalPrice: 0,
+                    stock: 0,
+                    categoryId: '',
+                    subcategoryId: '',
+                    image: '',
+                    isVisible: true,
+                    featured: false,
+                  });
+                  setProductImages([]);
+                  setErrors({});
+                }}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 font-semibold text-lg shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded hover:from-red-700 hover:via-red-600 hover:to-red-500 font-semibold text-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Saving...' : (editingId ? 'Update Product' : 'Create Product')}
+              </button>
+            </div>
           </form>
         </div>
       )}
 
       {/* Filters */}
       {!loading && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-red-300 hover:border-red-400 transition-all">
+        <div className="bg-white rounded-xl shadow-md hover:shadow-lg p-6 mb-6 border border-gray-200 hover:border-red-500 transition-all">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <input
@@ -551,14 +598,14 @@ export default function ProductsPage() {
                 placeholder="🔍 Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               />
             </div>
             <div>
               <select
                 value={filterVisible}
                 onChange={(e) => setFilterVisible(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               >
                 <option value="all">All Visibility</option>
                 <option value="visible">Visible Only</option>
@@ -584,52 +631,66 @@ export default function ProductsPage() {
         <div className="text-center py-8">Loading...</div>
       ) : filteredProducts.length > 0 ? (
         <div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-6 text-lg">
             Showing {filteredProducts.length} of {products.length} products
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-4 gap-4">
             {filteredProducts.map((product) => (
-              <div key={product._id} className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-red-300 hover:border-red-600 transition-all duration-300 transform hover:-translate-y-2">
+              <div key={product._id} className="bg-white rounded-xl shadow-md hover:shadow-2xl overflow-hidden border border-gray-200 hover:border-red-500 transition-all duration-300 transform hover:-translate-y-1">
                 <div className="relative h-40 overflow-hidden bg-gray-100">
                   <img
                     src={product.image}
                     alt={product.name}
                     className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-300"
                   />
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  {product.originalPrice && product.originalPrice < product.price && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <div className="bg-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl border-2 border-red-600">
+                        <span className="text-red-600 font-bold text-sm">
+                          {Math.round(((product.price - product.originalPrice) / product.price) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute top-2 right-2 flex flex-col gap-1">
                     {product.isVisible && (
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">👁️ Visible</span>
+                      <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold shadow">👁️</span>
                     )}
                     {product.featured && (
-                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">⭐ Featured</span>
+                      <span className="bg-yellow-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold shadow">⭐</span>
                     )}
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-bold mb-1 truncate">{product.name}</h3>
-                  <p className="text-xs text-gray-500 mb-3">
+                <div className="p-3">
+                  <h3 className="text-sm font-bold mb-1 line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
+                  <p className="text-xs text-gray-500 mb-2 truncate">
                     {getCategoryName(product.categoryId)} → {getSubcategoryName(product.subcategoryId)}
                   </p>
                   <div className="flex justify-between items-center mb-3">
-                    <span className="text-green-600 font-bold text-lg">₹{product.price}</span>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                    <div className="flex items-center gap-2">
+                      <span className="text-red-600 font-bold text-base">₹{product.originalPrice || product.price}</span>
+                      {product.originalPrice && (
+                        <span className="text-gray-400 text-xs line-through">₹{product.price}</span>
+                      )}
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
                       product.stock > 20 ? 'bg-green-100 text-green-800' :
                       product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}>
-                      {product.stock} stock
+                      {product.stock}
                     </span>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(product)}
-                      className="flex-1 px-3 py-2.5 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
+                      className="flex-1 px-2 py-2 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(product._id, product.name)}
-                      className="flex-1 px-3 py-2.5 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
+                      className="flex-1 px-2 py-2 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
                       Delete
                     </button>

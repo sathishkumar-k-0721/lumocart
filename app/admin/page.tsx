@@ -38,62 +38,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [productsRes, categoriesRes, subcategoriesRes, ordersRes] = await Promise.all([
-          fetch('/api/admin/products'),
-          fetch('/api/admin/categories'),
-          fetch('/api/admin/subcategories'),
-          fetch('/api/admin/orders?limit=1000'),
-        ]);
+        const statsRes = await fetch('/api/admin/stats');
+        
+        if (!statsRes.ok) {
+          console.error('Stats fetch failed:', statsRes.status);
+          return;
+        }
 
-        console.log('Response statuses:', {
-          products: productsRes.ok,
-          categories: categoriesRes.ok,
-          subcategories: subcategoriesRes.ok,
-          orders: ordersRes.ok
-        });
+        const statsData = await statsRes.json();
+        console.log('Dashboard stats:', statsData);
 
-        const products = await productsRes.json();
-        const categories = await categoriesRes.json();
-        const subcategories = await subcategoriesRes.json();
-        const ordersData = await ordersRes.json();
-        const orders = ordersData.orders || [];
-
-        console.log('Raw responses:', { products, categories, subcategories, ordersData });
-
-        console.log('Dashboard data:', { 
-          products: Array.isArray(products) ? products.length : 'not array', 
-          categories: Array.isArray(categories) ? categories.length : 'not array', 
-          subcategories: Array.isArray(subcategories) ? subcategories.length : 'not array',
-          orders: orders.length 
-        });
-
-        const totalStock = (Array.isArray(products) ? products : []).reduce((sum: number, p: any) => sum + (p.stock || 0), 0);
-        const visibleProducts = (Array.isArray(products) ? products : []).filter((p: any) => p.isVisible).length;
-        const featuredProducts = (Array.isArray(products) ? products : []).filter((p: any) => p.featured).length;
-        const outOfStock = (Array.isArray(products) ? products : []).filter((p: any) => p.stock === 0).length;
-
-        const totalOrders = orders.length;
-        const shippedOrders = orders.filter((o: any) => o.status === 'SHIPPED' || o.status === 'DELIVERED').length;
-        const totalRevenue = orders
-          .filter((o: any) => o.paymentStatus === 'PAID')
-          .reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
-        const successfulPayments = orders.filter((o: any) => o.paymentStatus === 'PAID').length;
-
-        setStats({
-          products: Array.isArray(products) ? products.length : 0,
-          categories: Array.isArray(categories) ? categories.length : 0,
-          subcategories: Array.isArray(subcategories) ? subcategories.length : 0,
-          totalStock,
-          visibleProducts,
-          featuredProducts,
-          outOfStock,
-          totalOrders,
-          shippedOrders,
-          totalRevenue: Math.round(totalRevenue * 100) / 100,
-          successfulPayments,
-        });
+        setStats(statsData);
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error('Failed to fetch dashboard stats:', error);
       } finally {
         setLoading(false);
       }
@@ -150,7 +107,7 @@ export default function AdminDashboard() {
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl cursor-pointer group"
+                  className="bg-white rounded-xl shadow-md hover:shadow-2xl p-6 border border-gray-200 hover:border-red-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -168,7 +125,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 hover:shadow-2xl">
+            <div className="bg-white rounded-xl shadow-md hover:shadow-2xl p-6 border border-gray-200 hover:border-red-500 transition-all duration-300">
               <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
                 <span className="w-1 h-6 bg-red-600 mr-3 rounded-full"></span>
                 Quick Actions
@@ -201,7 +158,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-red-300 hover:border-red-600 transition-all duration-300 hover:shadow-2xl">
+            <div className="bg-white rounded-xl shadow-md hover:shadow-2xl p-6 border border-gray-200 hover:border-red-500 transition-all duration-300">
               <h2 className="text-xl font-bold mb-6 text-gray-800 flex items-center">
                 <span className="w-1 h-6 bg-red-600 mr-3 rounded-full"></span>
                 Store Info

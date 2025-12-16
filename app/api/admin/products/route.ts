@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
 async function requireAdmin() {
@@ -27,6 +27,20 @@ export async function GET(req: NextRequest) {
 
     const products = await prisma.product.findMany({
       where,
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        originalPrice: true,
+        stock: true,
+        categoryId: true,
+        subcategoryId: true,
+        isVisible: true,
+        featured: true,
+        image: true,
+        images: true,
+        description: true,
+      },
       orderBy: { createdAt: 'desc' },
     });
     const transformed = products.map(prod => ({ ...prod, _id: prod.id }));
@@ -54,7 +68,7 @@ export async function POST(req: NextRequest) {
         name: body.name,
         description: body.description || '',
         price: body.price,
-        originalPrice: body.originalPrice || null,
+        originalPrice: body.originalPrice !== undefined && body.originalPrice !== null ? body.originalPrice : null,
         stock: body.stock,
         categoryId: body.categoryId,
         subcategoryId: body.subcategoryId,

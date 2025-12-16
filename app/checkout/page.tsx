@@ -66,6 +66,8 @@ export default function CheckoutPage() {
   });
 
   const [sameAsShipping, setSameAsShipping] = React.useState(true);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [shakeFields, setShakeFields] = React.useState<Set<string>>(new Set());
 
   React.useEffect(() => {
     if (status === 'loading') return;
@@ -105,130 +107,110 @@ export default function CheckoutPage() {
   const total = subtotal + shipping;
 
   const validateForm = () => {
-    const required = [
-      shippingAddress.fullName,
-      shippingAddress.phone,
-      shippingAddress.addressLine1,
-      shippingAddress.city,
-      shippingAddress.state,
-      shippingAddress.pincode,
-    ];
+    const newErrors: Record<string, string> = {};
+    const fieldsToShake = new Set<string>();
 
+    // Validate shipping address
+    if (!shippingAddress.fullName.trim()) {
+      newErrors['shipping.fullName'] = 'Full name is required';
+      fieldsToShake.add('shipping.fullName');
+    }
+
+    if (!shippingAddress.phone.trim()) {
+      newErrors['shipping.phone'] = 'Phone number is required';
+      fieldsToShake.add('shipping.phone');
+    } else if (!/^\d{10}$/.test(shippingAddress.phone)) {
+      newErrors['shipping.phone'] = 'Please enter a valid 10-digit phone number';
+      fieldsToShake.add('shipping.phone');
+    }
+
+    if (!shippingAddress.addressLine1.trim()) {
+      newErrors['shipping.addressLine1'] = 'Address is required';
+      fieldsToShake.add('shipping.addressLine1');
+    }
+
+    if (!shippingAddress.city.trim()) {
+      newErrors['shipping.city'] = 'City is required';
+      fieldsToShake.add('shipping.city');
+    }
+
+    if (!shippingAddress.state.trim()) {
+      newErrors['shipping.state'] = 'State is required';
+      fieldsToShake.add('shipping.state');
+    }
+
+    if (!shippingAddress.pincode.trim()) {
+      newErrors['shipping.pincode'] = 'Pincode is required';
+      fieldsToShake.add('shipping.pincode');
+    } else if (!/^\d{6}$/.test(shippingAddress.pincode)) {
+      newErrors['shipping.pincode'] = 'Please enter a valid 6-digit pincode';
+      fieldsToShake.add('shipping.pincode');
+    }
+
+    // Validate billing address if not same as shipping
     if (!sameAsShipping) {
-      required.push(
-        billingAddress.fullName,
-        billingAddress.phone,
-        billingAddress.addressLine1,
-        billingAddress.city,
-        billingAddress.state,
-        billingAddress.pincode
-      );
+      if (!billingAddress.fullName.trim()) {
+        newErrors['billing.fullName'] = 'Full name is required';
+        fieldsToShake.add('billing.fullName');
+      }
+
+      if (!billingAddress.phone.trim()) {
+        newErrors['billing.phone'] = 'Phone number is required';
+        fieldsToShake.add('billing.phone');
+      } else if (!/^\d{10}$/.test(billingAddress.phone)) {
+        newErrors['billing.phone'] = 'Please enter a valid 10-digit phone number';
+        fieldsToShake.add('billing.phone');
+      }
+
+      if (!billingAddress.addressLine1.trim()) {
+        newErrors['billing.addressLine1'] = 'Address is required';
+        fieldsToShake.add('billing.addressLine1');
+      }
+
+      if (!billingAddress.city.trim()) {
+        newErrors['billing.city'] = 'City is required';
+        fieldsToShake.add('billing.city');
+      }
+
+      if (!billingAddress.state.trim()) {
+        newErrors['billing.state'] = 'State is required';
+        fieldsToShake.add('billing.state');
+      }
+
+      if (!billingAddress.pincode.trim()) {
+        newErrors['billing.pincode'] = 'Pincode is required';
+        fieldsToShake.add('billing.pincode');
+      } else if (!/^\d{6}$/.test(billingAddress.pincode)) {
+        newErrors['billing.pincode'] = 'Please enter a valid 6-digit pincode';
+        fieldsToShake.add('billing.pincode');
+      }
     }
 
-    if (required.some(field => !field)) {
-      toast.error('Please fill in all required fields');
-      return false;
-    }
-
-    if (!/^\d{10}$/.test(shippingAddress.phone)) {
-      toast.error('Please enter a valid 10-digit phone number');
-      return false;
-    }
-
-    if (!/^\d{6}$/.test(shippingAddress.pincode)) {
-      toast.error('Please enter a valid 6-digit pincode');
+    setErrors(newErrors);
+    
+    if (fieldsToShake.size > 0) {
+      setShakeFields(fieldsToShake);
+      // Remove shake animation after it completes
+      setTimeout(() => setShakeFields(new Set()), 500);
+      toast.error('Please fill in all required fields correctly');
       return false;
     }
 
     return true;
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validateForm() || !cart) return;
+  const handlePlaceOrder = () => {
+    if (!validateForm()) return;
 
-    setProcessing(true);
+    // Store order details in sessionStorage
+    sessionStorage.setItem('checkoutData', JSON.stringify({
+      shippingAddress,
+      billingAddress: sameAsShipping ? shippingAddress : billingAddress,
+      sameAsShipping,
+    }));
 
-    try {
-      // Create order
-      const orderRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart.items.map(item => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-            price: item.product.price,
-          })),
-          shippingAddress,
-          billingAddress: sameAsShipping ? shippingAddress : billingAddress,
-          total,
-        }),
-      });
-
-      if (!orderRes.ok) {
-        const error = await orderRes.json();
-        toast.error(error.error || 'Failed to create order');
-        setProcessing(false);
-        return;
-      }
-
-      const orderData = await orderRes.json();
-
-      // Initialize Razorpay
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: orderData.razorpayOrder.amount,
-        currency: orderData.razorpayOrder.currency,
-        name: 'Lumo',
-        description: `Order #${orderData.order.orderNumber}`,
-        order_id: orderData.razorpayOrder.id,
-        handler: async function (response: any) {
-          try {
-            // Verify payment
-            const verifyRes = await fetch('/api/orders/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                orderId: orderData.order._id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-              }),
-            });
-
-            if (verifyRes.ok) {
-              toast.success('Payment successful!');
-              router.push(`/orders/${orderData.order._id}`);
-            } else {
-              toast.error('Payment verification failed');
-            }
-          } catch (error) {
-            toast.error('Payment verification failed');
-          } finally {
-            setProcessing(false);
-          }
-        },
-        prefill: {
-          name: shippingAddress.fullName,
-          contact: shippingAddress.phone,
-        },
-        theme: {
-          color: '#2563eb',
-        },
-        modal: {
-          ondismiss: function () {
-            setProcessing(false);
-            toast.error('Payment cancelled');
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      toast.error('An error occurred');
-      setProcessing(false);
-    }
+    // Navigate to payment page
+    router.push('/payment');
   };
 
   if (status === 'loading' || loading) {
@@ -254,34 +236,58 @@ export default function CheckoutPage() {
                 <CardTitle>Shipping Address</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Input
-                  label="Full Name"
-                  value={shippingAddress.fullName}
-                  onChange={(e) =>
-                    setShippingAddress({ ...shippingAddress, fullName: e.target.value })
-                  }
-                  required
-                />
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  value={shippingAddress.phone}
-                  onChange={(e) =>
-                    setShippingAddress({ ...shippingAddress, phone: e.target.value })
-                  }
-                  required
-                />
-                <Input
-                  label="Address Line 1"
-                  value={shippingAddress.addressLine1}
-                  onChange={(e) =>
-                    setShippingAddress({
-                      ...shippingAddress,
-                      addressLine1: e.target.value,
-                    })
-                  }
-                  required
-                />
+                <div className={shakeFields.has('shipping.fullName') ? 'shake' : ''}>
+                  <Input
+                    label="Full Name"
+                    value={shippingAddress.fullName}
+                    onChange={(e) => {
+                      setShippingAddress({ ...shippingAddress, fullName: e.target.value });
+                      if (errors['shipping.fullName']) {
+                        const newErrors = { ...errors };
+                        delete newErrors['shipping.fullName'];
+                        setErrors(newErrors);
+                      }
+                    }}
+                    error={errors['shipping.fullName']}
+                    required
+                  />
+                </div>
+                <div className={shakeFields.has('shipping.phone') ? 'shake' : ''}>
+                  <Input
+                    label="Phone Number"
+                    type="tel"
+                    value={shippingAddress.phone}
+                    onChange={(e) => {
+                      setShippingAddress({ ...shippingAddress, phone: e.target.value });
+                      if (errors['shipping.phone']) {
+                        const newErrors = { ...errors };
+                        delete newErrors['shipping.phone'];
+                        setErrors(newErrors);
+                      }
+                    }}
+                    error={errors['shipping.phone']}
+                    required
+                  />
+                </div>
+                <div className={shakeFields.has('shipping.addressLine1') ? 'shake' : ''}>
+                  <Input
+                    label="Address Line 1"
+                    value={shippingAddress.addressLine1}
+                    onChange={(e) => {
+                      setShippingAddress({
+                        ...shippingAddress,
+                        addressLine1: e.target.value,
+                      });
+                      if (errors['shipping.addressLine1']) {
+                        const newErrors = { ...errors };
+                        delete newErrors['shipping.addressLine1'];
+                        setErrors(newErrors);
+                      }
+                    }}
+                    error={errors['shipping.addressLine1']}
+                    required
+                  />
+                </div>
                 <Input
                   label="Address Line 2 (Optional)"
                   value={shippingAddress.addressLine2}
@@ -293,33 +299,57 @@ export default function CheckoutPage() {
                   }
                 />
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <Input
-                    label="City"
-                    value={shippingAddress.city}
-                    onChange={(e) =>
-                      setShippingAddress({ ...shippingAddress, city: e.target.value })
-                    }
-                    required
-                  />
-                  <Input
-                    label="State"
-                    value={shippingAddress.state}
-                    onChange={(e) =>
-                      setShippingAddress({ ...shippingAddress, state: e.target.value })
-                    }
-                    required
-                  />
-                  <Input
-                    label="Pincode"
-                    value={shippingAddress.pincode}
-                    onChange={(e) =>
-                      setShippingAddress({
-                        ...shippingAddress,
-                        pincode: e.target.value,
-                      })
-                    }
-                    required
-                  />
+                  <div className={shakeFields.has('shipping.city') ? 'shake' : ''}>
+                    <Input
+                      label="City"
+                      value={shippingAddress.city}
+                      onChange={(e) => {
+                        setShippingAddress({ ...shippingAddress, city: e.target.value });
+                        if (errors['shipping.city']) {
+                          const newErrors = { ...errors };
+                          delete newErrors['shipping.city'];
+                          setErrors(newErrors);
+                        }
+                      }}
+                      error={errors['shipping.city']}
+                      required
+                    />
+                  </div>
+                  <div className={shakeFields.has('shipping.state') ? 'shake' : ''}>
+                    <Input
+                      label="State"
+                      value={shippingAddress.state}
+                      onChange={(e) => {
+                        setShippingAddress({ ...shippingAddress, state: e.target.value });
+                        if (errors['shipping.state']) {
+                          const newErrors = { ...errors };
+                          delete newErrors['shipping.state'];
+                          setErrors(newErrors);
+                        }
+                      }}
+                      error={errors['shipping.state']}
+                      required
+                    />
+                  </div>
+                  <div className={shakeFields.has('shipping.pincode') ? 'shake' : ''}>
+                    <Input
+                      label="Pincode"
+                      value={shippingAddress.pincode}
+                      onChange={(e) => {
+                        setShippingAddress({
+                          ...shippingAddress,
+                          pincode: e.target.value,
+                        });
+                        if (errors['shipping.pincode']) {
+                          const newErrors = { ...errors };
+                          delete newErrors['shipping.pincode'];
+                          setErrors(newErrors);
+                        }
+                      }}
+                      error={errors['shipping.pincode']}
+                      required
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -345,34 +375,58 @@ export default function CheckoutPage() {
 
                 {!sameAsShipping && (
                   <>
-                    <Input
-                      label="Full Name"
-                      value={billingAddress.fullName}
-                      onChange={(e) =>
-                        setBillingAddress({ ...billingAddress, fullName: e.target.value })
-                      }
-                      required
-                    />
-                    <Input
-                      label="Phone Number"
-                      type="tel"
-                      value={billingAddress.phone}
-                      onChange={(e) =>
-                        setBillingAddress({ ...billingAddress, phone: e.target.value })
-                      }
-                      required
-                    />
-                    <Input
-                      label="Address Line 1"
-                      value={billingAddress.addressLine1}
-                      onChange={(e) =>
-                        setBillingAddress({
-                          ...billingAddress,
-                          addressLine1: e.target.value,
-                        })
-                      }
-                      required
-                    />
+                    <div className={shakeFields.has('billing.fullName') ? 'shake' : ''}>
+                      <Input
+                        label="Full Name"
+                        value={billingAddress.fullName}
+                        onChange={(e) => {
+                          setBillingAddress({ ...billingAddress, fullName: e.target.value });
+                          if (errors['billing.fullName']) {
+                            const newErrors = { ...errors };
+                            delete newErrors['billing.fullName'];
+                            setErrors(newErrors);
+                          }
+                        }}
+                        error={errors['billing.fullName']}
+                        required
+                      />
+                    </div>
+                    <div className={shakeFields.has('billing.phone') ? 'shake' : ''}>
+                      <Input
+                        label="Phone Number"
+                        type="tel"
+                        value={billingAddress.phone}
+                        onChange={(e) => {
+                          setBillingAddress({ ...billingAddress, phone: e.target.value });
+                          if (errors['billing.phone']) {
+                            const newErrors = { ...errors };
+                            delete newErrors['billing.phone'];
+                            setErrors(newErrors);
+                          }
+                        }}
+                        error={errors['billing.phone']}
+                        required
+                      />
+                    </div>
+                    <div className={shakeFields.has('billing.addressLine1') ? 'shake' : ''}>
+                      <Input
+                        label="Address Line 1"
+                        value={billingAddress.addressLine1}
+                        onChange={(e) => {
+                          setBillingAddress({
+                            ...billingAddress,
+                            addressLine1: e.target.value,
+                          });
+                          if (errors['billing.addressLine1']) {
+                            const newErrors = { ...errors };
+                            delete newErrors['billing.addressLine1'];
+                            setErrors(newErrors);
+                          }
+                        }}
+                        error={errors['billing.addressLine1']}
+                        required
+                      />
+                    </div>
                     <Input
                       label="Address Line 2 (Optional)"
                       value={billingAddress.addressLine2}
@@ -384,33 +438,57 @@ export default function CheckoutPage() {
                       }
                     />
                     <div className="grid gap-4 sm:grid-cols-3">
-                      <Input
-                        label="City"
-                        value={billingAddress.city}
-                        onChange={(e) =>
-                          setBillingAddress({ ...billingAddress, city: e.target.value })
-                        }
-                        required
-                      />
-                      <Input
-                        label="State"
-                        value={billingAddress.state}
-                        onChange={(e) =>
-                          setBillingAddress({ ...billingAddress, state: e.target.value })
-                        }
-                        required
-                      />
-                      <Input
-                        label="Pincode"
-                        value={billingAddress.pincode}
-                        onChange={(e) =>
-                          setBillingAddress({
-                            ...billingAddress,
-                            pincode: e.target.value,
-                          })
-                        }
-                        required
-                      />
+                      <div className={shakeFields.has('billing.city') ? 'shake' : ''}>
+                        <Input
+                          label="City"
+                          value={billingAddress.city}
+                          onChange={(e) => {
+                            setBillingAddress({ ...billingAddress, city: e.target.value });
+                            if (errors['billing.city']) {
+                              const newErrors = { ...errors };
+                              delete newErrors['billing.city'];
+                              setErrors(newErrors);
+                            }
+                          }}
+                          error={errors['billing.city']}
+                          required
+                        />
+                      </div>
+                      <div className={shakeFields.has('billing.state') ? 'shake' : ''}>
+                        <Input
+                          label="State"
+                          value={billingAddress.state}
+                          onChange={(e) => {
+                            setBillingAddress({ ...billingAddress, state: e.target.value });
+                            if (errors['billing.state']) {
+                              const newErrors = { ...errors };
+                              delete newErrors['billing.state'];
+                              setErrors(newErrors);
+                            }
+                          }}
+                          error={errors['billing.state']}
+                          required
+                        />
+                      </div>
+                      <div className={shakeFields.has('billing.pincode') ? 'shake' : ''}>
+                        <Input
+                          label="Pincode"
+                          value={billingAddress.pincode}
+                          onChange={(e) => {
+                            setBillingAddress({
+                              ...billingAddress,
+                              pincode: e.target.value,
+                            });
+                            if (errors['billing.pincode']) {
+                              const newErrors = { ...errors };
+                              delete newErrors['billing.pincode'];
+                              setErrors(newErrors);
+                            }
+                          }}
+                          error={errors['billing.pincode']}
+                          required
+                        />
+                      </div>
                     </div>
                   </>
                 )}
@@ -464,9 +542,8 @@ export default function CheckoutPage() {
                   className="w-full"
                   size="lg"
                   loading={processing}
-                  disabled={!razorpayLoaded}
                 >
-                  {razorpayLoaded ? 'Place Order' : 'Loading Payment...'}
+                  Place Order
                 </Button>
 
                 {/* Security Features */}
@@ -492,4 +569,3 @@ export default function CheckoutPage() {
     </>
   );
 }
-

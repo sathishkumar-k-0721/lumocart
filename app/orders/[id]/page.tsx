@@ -12,11 +12,11 @@ import toast from 'react-hot-toast';
 import { FiPackage, FiCheckCircle, FiTruck, FiClock, FiMapPin } from 'react-icons/fi';
 
 interface Order {
-  _id: string;
+  id: string;
   orderNumber: string;
   items: Array<{
     product: {
-      _id: string;
+      id: string;
       name: string;
       slug: string;
       images: string[];
@@ -24,9 +24,10 @@ interface Order {
     quantity: number;
     price: number;
   }>;
-  total: number;
+  totalAmount: number;
   status: string;
   paymentStatus: string;
+  paymentMethod?: string;
   shippingAddress: {
     fullName: string;
     phone: string;
@@ -125,7 +126,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/account"
+          href="/orders"
           className="mb-4 inline-flex items-center text-sm text-blue-600 hover:underline"
         >
           ← Back to Orders
@@ -286,11 +287,21 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </p>
               </div>
 
+              {/* Payment Method */}
+              <div>
+                <span className="text-sm text-gray-600">Payment Method</span>
+                <p className="mt-1 font-medium text-gray-900 capitalize">
+                  {order.paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : 
+                   order.paymentMethod === 'online' ? 'Online Payment' : 
+                   order.paymentMethod || 'N/A'}
+                </p>
+              </div>
+
               {/* Total */}
               <div className="border-t pt-4">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span>₹{order.total.toFixed(2)}</span>
+                  <span>₹{order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 

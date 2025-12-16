@@ -122,6 +122,7 @@ model Order {
   totalAmount     Float
   status          OrderStatus   @default(PENDING)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?       @default("online")
   paymentId       String?
   razorpayOrderId String?
   shippingAddress Json

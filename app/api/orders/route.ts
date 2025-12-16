@@ -4,10 +4,14 @@ import { requireAuth, requireAdmin } from '@/lib/auth';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+// Initialize Razorpay only if keys are available
+let razorpay: Razorpay | null = null;
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+}
 
 function generateOrderNumber(): string {
   const timestamp = Date.now().toString().slice(-8);
@@ -90,7 +94,7 @@ export async function POST(req: NextRequest) {
     const user = await requireAuth();
     const body = await req.json();
     
-    const { shippingAddress, billingAddress, notes } = body;
+    const { shippingAddress, billingAddress, notes, paymentMethod = 'online' } = body;
 
     // Get user's cart
     const cart = await prisma.cart.findUnique({
@@ -122,25 +126,57 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate total
-    const totalAmount = cart.items.reduce(
+    let totalAmount = cart.items.reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
 
-    // Create Razorpay order
-    const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(totalAmount * 100), // Convert to paise
-      currency: 'INR',
-      receipt: generateOrderNumber(),
-    });
+    // Add shipping charges
+    const shipping = totalAmount > 500 ? 0 : 50;
+    totalAmount += shipping;
+
+    // Add COD charges if applicable
+    if (paymentMethod === 'cod') {
+      totalAmount += 40;
+    }
+
+    const orderNumber = generateOrderNumber();
+    let razorpayOrder: any = null;
+
+    // Create Razorpay order only for online payment
+    if (paymentMethod === 'online') {
+      if (!razorpay) {
+        return NextResponse.json(
+          { error: 'Online payment is not configured. Please use Cash on Delivery.' },
+          { status: 503 }
+        );
+      }
+      
+      try {
+        razorpayOrder = await razorpay.orders.create({
+          amount: Math.round(totalAmount * 100), // Convert to paise
+          currency: 'INR',
+          receipt: orderNumber,
+        });
+      } catch (error) {
+        console.error('Razorpay order creation failed:', error);
+        return NextResponse.json(
+          { error: 'Payment gateway error. Please try again or use COD.' },
+          { status: 500 }
+        );
+      }
+    }
 
     // Create order in database
     const order = await prisma.order.create({
       data: {
-        orderNumber: razorpayOrder.receipt || generateOrderNumber(),
+        orderNumber,
         userId: user.id,
         totalAmount,
-        razorpayOrderId: razorpayOrder.id,
+        razorpayOrderId: razorpayOrder?.id,
+        paymentStatus: paymentMethod === 'cod' ? 'PENDING' : 'PENDING',
+        paymentMethod: paymentMethod,
+        status: 'PENDING',
         shippingAddress,
         billingAddress,
         notes,
@@ -161,6 +197,29 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // For COD, update stock immediately and mark order as confirmed
+    if (paymentMethod === 'cod') {
+      // Update stock
+      for (const item of cart.items) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
+
+      // Update order status
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'PROCESSING',
+        },
+      });
+    }
+
     // Clear cart
     await prisma.cartItem.deleteMany({
       where: { cartId: cart.id },
@@ -170,11 +229,11 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Order created successfully',
       order,
-      razorpayOrder: {
+      razorpayOrder: razorpayOrder ? {
         id: razorpayOrder.id,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-      },
+      } : null,
     });
   } catch (error: any) {
     if (error.message.includes('Unauthorized')) {

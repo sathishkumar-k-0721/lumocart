@@ -148,7 +148,7 @@ export default function CategoriesPage() {
           }}
           className="whitespace-nowrap px-8 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-lg rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 flex items-center gap-2"
         >
-          {showForm ? '✕ Cancel' : '➕ Add Category'}
+          ➕ Add Category
         </button>
       </div>
 
@@ -196,25 +196,39 @@ export default function CategoriesPage() {
                 </div>
               )}
             </div>
-            <button
-              type="submit"
-              className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-            >
-              {editingId ? '✓ Update Category' : '➕ Create Category'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                  setFormData({ name: '', description: '', image: '' });
+                  setErrors({});
+                }}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 font-semibold shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+              >
+                {editingId ? 'Update Category' : 'Create Category'}
+              </button>
+            </div>
           </form>
         </div>
       )}
 
       {/* Search */}
       {!loading && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-red-200 hover:border-red-400 transition-all">
+        <div className="bg-white rounded-xl shadow-md hover:shadow-lg p-6 mb-6 border border-gray-200 hover:border-red-500 transition-all">
           <input
             type="text"
             placeholder="🔍 Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
           />
         </div>
       )}
@@ -225,33 +239,33 @@ export default function CategoriesPage() {
         </div>
       ) : filteredCategories.length > 0 ? (
         <div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 mb-6 text-lg">
             Showing {filteredCategories.length} of {categories.length} categories
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-4 gap-4">
             {filteredCategories.map((category) => (
-              <div key={category._id} className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-red-300 hover:border-red-600 transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl group">
-                <div className="h-48 overflow-hidden bg-gradient-to-br from-red-50 to-red-100">
+              <div key={category._id} className="bg-white rounded-xl shadow-md hover:shadow-2xl overflow-hidden border border-gray-200 hover:border-red-500 transition-all duration-300 transform hover:-translate-y-1 group">
+                <div className="h-40 overflow-hidden bg-gradient-to-br from-red-50 to-red-100">
                   <img
                     src={category.image}
                     alt={category.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2 text-gray-800 group-hover:text-red-600 transition-colors">{category.name}</h3>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{category.description}</p>
-                  <p className="text-xs text-gray-400 mb-4 font-mono bg-gray-50 px-2 py-1 rounded">/{category.slug}</p>
-                  <div className="flex gap-3">
+                <div className="p-3">
+                  <h3 className="text-sm font-bold mb-1 text-gray-800 group-hover:text-red-600 transition-colors line-clamp-2 min-h-[2.5rem]">{category.name}</h3>
+                  <p className="text-gray-600 text-xs mb-2 line-clamp-2">{category.description}</p>
+                  <p className="text-xs text-gray-400 mb-3 font-mono bg-gray-50 px-2 py-1 rounded truncate">/{category.slug}</p>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(category)}
-                      className="flex-1 px-4 py-2.5 bg-gradient-to-r from-white via-red-50 to-white text-red-600 font-semibold rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
+                      className="flex-1 px-2 py-2 bg-gradient-to-r from-white via-red-50 to-white text-red-600 font-semibold rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-xs shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(category._id, category.name)}
-                      className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white font-semibold rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5"
+                      className="flex-1 px-2 py-2 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white font-semibold rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-xs shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
                       Delete
                     </button>

@@ -12,20 +12,21 @@ import toast from 'react-hot-toast';
 import { FiMinus, FiPlus, FiTrash2, FiShoppingBag } from 'react-icons/fi';
 
 interface CartItem {
-  _id: string;
+  id: string;
   product: {
-    _id: string;
+    id: string;
     name: string;
     slug: string;
     price: number;
-    images: string[];
+    image: string;
+    images?: string[];
     stock: number;
   };
   quantity: number;
 }
 
 interface Cart {
-  _id: string;
+  id: string;
   items: CartItem[];
 }
 
@@ -67,6 +68,16 @@ export default function CartPage() {
     setUpdatingItems(prev => new Set(prev).add(itemId));
 
     try {
+      // Update locally first for immediate feedback
+      if (cart) {
+        setCart({
+          ...cart,
+          items: cart.items.map(item => 
+            item.id === itemId ? { ...item, quantity: newQuantity } : item
+          ),
+        });
+      }
+
       const res = await fetch('/api/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -76,13 +87,15 @@ export default function CartPage() {
         }),
       });
 
-      if (res.ok) {
+      if (!res.ok) {
+        // Revert on error
         await fetchCart();
-      } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to update quantity');
       }
     } catch (error) {
+      // Revert on error
+      await fetchCart();
       toast.error('An error occurred');
     } finally {
       setUpdatingItems(prev => {
@@ -99,26 +112,23 @@ export default function CartPage() {
     setUpdatingItems(prev => new Set(prev).add(itemId));
 
     try {
-      // Update cart locally first for optimistic UI
-      setCart({
-        ...cart,
-        items: cart.items.filter(item => item._id !== itemId),
-      });
-
       const res = await fetch(`/api/cart/${itemId}`, {
         method: 'DELETE',
       });
 
       if (res.ok) {
+        // Update cart locally after successful deletion
+        setCart({
+          ...cart,
+          items: cart.items.filter(item => item.id !== itemId),
+        });
         toast.success('Item removed from cart');
-        await fetchCart();
       } else {
-        // Revert on error
-        await fetchCart();
-        toast.error('Failed to remove item');
+        const data = await res.json();
+        toast.error(data.error || 'Failed to remove item');
       }
     } catch (error) {
-      await fetchCart();
+      console.error('Remove item error:', error);
       toast.error('An error occurred');
     } finally {
       setUpdatingItems(prev => {
@@ -160,8 +170,8 @@ export default function CartPage() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="mx-auto max-w-md text-center">
+      <div className="container mx-auto px-14 md:px-20 py-16">
+        <div className="mx-auto max-w-md text-center bg-white p-8 rounded-lg shadow-md">
           <FiShoppingBag className="mx-auto h-24 w-24 text-gray-300" />
           <h1 className="mt-6 text-3xl font-bold text-gray-900">
             Your cart is empty
@@ -169,7 +179,11 @@ export default function CartPage() {
           <p className="mt-4 text-gray-600">
             Looks like you haven't added anything to your cart yet.
           </p>
-          <Button onClick={() => router.push('/products')} className="mt-8" size="lg">
+          <Button 
+            onClick={() => router.push('/')} 
+            className="mt-8 bg-gradient-to-r from-red-600 via-red-500 to-red-400 hover:from-red-700 hover:via-red-600 hover:to-red-500" 
+            size="lg"
+          >
             Start Shopping
           </Button>
         </div>
@@ -178,8 +192,12 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold text-gray-900">Shopping Cart</h1>
+    <div className="container mx-auto px-14 md:px-20 py-8">
+      {/* Header */}
+      <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600 mb-8">
+        <h1 className="text-4xl font-bold text-red-600">Shopping Cart</h1>
+        <p className="text-gray-600 text-sm mt-2">{cart.items.length} item{cart.items.length !== 1 ? 's' : ''} in your cart</p>
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Cart Items */}
@@ -199,11 +217,11 @@ export default function CartPage() {
             <CardContent>
               <div className="divide-y">
                 {cart.items.map((item) => {
-                  const isUpdating = updatingItems.has(item._id);
+                  const isUpdating = updatingItems.has(item.id);
                   
                   return (
                     <div
-                      key={item._id}
+                      key={item.id}
                       className={`py-6 first:pt-0 last:pb-0 ${
                         isUpdating ? 'opacity-50' : ''
                       }`}
@@ -215,7 +233,7 @@ export default function CartPage() {
                           className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100"
                         >
                           <Image
-                            src={item.product.images[0] || '/placeholder.png'}
+                            src={item.product.images?.[0] || item.product.image || '/placeholder.png'}
                             alt={item.product.name}
                             fill
                             className="object-cover"
@@ -250,8 +268,8 @@ export default function CartPage() {
                                 className="h-8 w-8"
                                 onClick={() =>
                                   updateQuantity(
-                                    item._id,
-                                    item.product._id,
+                                    item.id,
+                                    item.product.id,
                                     item.quantity - 1
                                   )
                                 }
@@ -268,8 +286,8 @@ export default function CartPage() {
                                 className="h-8 w-8"
                                 onClick={() =>
                                   updateQuantity(
-                                    item._id,
-                                    item.product._id,
+                                    item.id,
+                                    item.product.id,
                                     item.quantity + 1
                                   )
                                 }
@@ -284,7 +302,7 @@ export default function CartPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => removeItem(item._id)}
+                              onClick={() => removeItem(item.id)}
                               disabled={isUpdating}
                               className="text-red-600 hover:text-red-700"
                             >
@@ -343,16 +361,16 @@ export default function CartPage() {
 
               <Button
                 onClick={() => router.push('/checkout')}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-red-600 via-red-500 to-red-400 hover:from-red-700 hover:via-red-600 hover:to-red-500 shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                 size="lg"
               >
                 Proceed to Checkout
               </Button>
 
               <Button
-                onClick={() => router.push('/products')}
+                onClick={() => router.push('/')}
                 variant="outline"
-                className="w-full"
+                className="w-full border-2 border-red-500 text-red-600 hover:bg-red-50"
               >
                 Continue Shopping
               </Button>

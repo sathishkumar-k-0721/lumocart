@@ -12,130 +12,164 @@ export function Header() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [cartItemCount, setCartItemCount] = React.useState(0);
-  const [scrolled, setScrolled] = React.useState(false);
 
+  // Fetch cart count
   React.useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+    const fetchCartCount = async () => {
+      if (session) {
+        try {
+          const res = await fetch('/api/cart');
+          if (res.ok) {
+            const data = await res.json();
+            const count = data.cart?.items?.length || 0;
+            setCartItemCount(count);
+          }
+        } catch (error) {
+          console.error('Failed to fetch cart:', error);
+        }
+      } else {
+        setCartItemCount(0);
+      }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+
+    fetchCartCount();
+  }, [session]);
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Products', href: '/products' },
-    { name: 'Categories', href: '/categories' },
-    { name: 'About', href: '/about' },
-    { name: 'Contact', href: '/contact' },
+    { name: 'Category', href: '/products' },
+    { name: 'Orders', href: '/orders' },
   ];
 
   return (
-    <header className={cn(
-      "sticky top-0 z-40 w-full transition-all duration-300",
-      scrolled 
-        ? "bg-white/95 backdrop-blur shadow-lg border-b border-red-200" 
-        : "bg-gradient-to-r from-red-50 via-white to-red-50 border-b border-gray-100"
-    )}>
-      <nav className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8">
+    <header className="sticky top-0 z-40 w-full bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white shadow-lg">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 md:px-6 py-4">
         {/* Logo */}
-        <div className="flex lg:flex-1">
-          <Link href="/" className="-m-1.5 p-1.5 group">
-            <span className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-transparent group-hover:from-red-700 group-hover:to-red-900 transition-all duration-300 transform group-hover:scale-105 inline-block">
+        <div className="flex items-center">
+          <Link href="/" className="mr-8">
+            <span className="text-xl md:text-2xl font-bold hover:opacity-90 transition-opacity">
               LumoCart
             </span>
           </Link>
+
+          {/* Desktop navigation */}
+          <div className="hidden md:flex items-center space-x-2">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'flex items-center px-4 py-2 rounded-lg font-light transition-all duration-300',
+                  pathname === item.href
+                    ? 'bg-white text-red-600 shadow-lg text-lg scale-105'
+                    : 'hover:bg-white/90 hover:text-red-600 text-base hover:scale-110'
+                )}
+              >
+                <span>{item.name}</span>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* Mobile menu button */}
-        <div className="flex lg:hidden">
+        <div className="flex md:hidden">
           <button
             type="button"
-            className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700 hover:bg-red-100 transition-colors duration-200"
+            className="inline-flex items-center justify-center rounded-md p-2.5 hover:bg-red-800 transition-colors duration-200"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <FiX className="h-6 w-6 transition-transform duration-200 rotate-90" />
+              <FiX className="h-6 w-6" />
             ) : (
               <FiMenu className="h-6 w-6" />
             )}
           </button>
         </div>
 
-        {/* Desktop navigation */}
-        <div className="hidden lg:flex lg:gap-x-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'relative px-4 py-2 font-semibold rounded-lg transition-all duration-300 group',
-                pathname === item.href 
-                  ? 'text-red-600 text-lg scale-105' 
-                  : 'text-gray-700 hover:text-red-600 text-base hover:scale-110'
-              )}
-            >
-              {item.name}
-              <span className={cn(
-                "absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-red-600 to-red-800 transform transition-all duration-300",
-                pathname === item.href ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-              )} />
-            </Link>
-          ))}
-        </div>
-
-        {/* Right side */}
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-4">
+        {/* Right side - Cart and Account */}
+        <div className="hidden md:flex items-center gap-2">
           {/* Cart */}
           <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative hover:bg-red-100 hover:text-red-600 transition-all duration-300 group">
-              <FiShoppingCart className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+            <Button variant="ghost" size="icon" className="relative hover:bg-red-800 text-white transition-all duration-300">
+              <FiShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-red-800 text-xs text-white animate-pulse">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-red-600 text-xs font-bold">
                   {cartItemCount}
                 </span>
               )}
             </Button>
           </Link>
 
-          {/* User menu */}
+          {/* User Account Dropdown */}
           {status === 'loading' ? (
-            <div className="h-10 w-10 animate-pulse rounded-full bg-gradient-to-r from-red-200 to-red-300" />
+            <div className="h-10 w-10 animate-pulse rounded-full bg-red-800" />
           ) : session ? (
-            <div className="flex items-center gap-2">
-              {session.user.role === 'ADMIN' && (
-                <Link href="/admin">
-                  <Button variant="outline" size="sm" className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-600 transition-all duration-300 group">
-                    <FiPackage className="h-4 w-4 group-hover:rotate-12 transition-transform duration-300" />
-                    <span className="ml-1">Admin</span>
-                  </Button>
-                </Link>
-              )}
-              <Link href="/account">
-                <Button variant="ghost" size="icon" className="hover:bg-red-100 hover:text-red-600 transition-all duration-300 group">
-                  <FiUser className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => signOut()}
-                title="Sign out"
-                className="hover:bg-red-100 hover:text-red-600 transition-all duration-300 group"
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                className="flex items-center space-x-3 bg-red-800 hover:bg-red-900 px-4 py-2 rounded-lg transition-colors"
               >
-                <FiLogOut className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </Button>
+                <div className="w-9 h-9 bg-white text-red-600 rounded-full flex items-center justify-center font-bold text-lg">
+                  {session.user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="hidden lg:block text-left">
+                  <p className="text-sm font-semibold">{session.user?.name || 'User'}</p>
+                  <p className="text-xs text-red-200">{session.user?.email}</p>
+                </div>
+                <span className="text-xl">▼</span>
+              </button>
+
+              {/* Dropdown Menu */}
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50">
+                  <div className="px-4 py-3 border-b border-gray-200">
+                    <p className="text-sm font-semibold text-gray-700">{session.user?.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{session.user?.email}</p>
+                    {session.user.role === 'ADMIN' && (
+                      <span className="inline-block mt-1 px-2 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded">
+                        ADMIN
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    href="/account"
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    onClick={() => setUserDropdownOpen(false)}
+                  >
+                    <FiUser className="mr-2" /> My Account
+                  </Link>
+                  {session.user.role === 'ADMIN' && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      <FiPackage className="mr-2" /> Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      signOut({ redirect: true });
+                      setUserDropdownOpen(false);
+                    }}
+                    className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <FiLogOut className="mr-2" /> Logout
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex gap-2">
               <Link href="/login">
-                <Button variant="ghost" className="hover:bg-red-50 hover:text-red-600 transition-all duration-300">
+                <Button variant="ghost" className="hover:bg-red-800 text-white transition-all duration-300">
                   Log in
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                <Button className="bg-white text-red-600 hover:bg-gray-100 shadow-lg transition-all duration-300">
                   Sign up
                 </Button>
               </Link>
@@ -146,17 +180,17 @@ export function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden animate-in slide-in-from-top duration-300">
-          <div className="space-y-1 px-4 pb-3 pt-2 bg-gradient-to-b from-red-50 to-white">
+        <div className="md:hidden bg-red-700">
+          <div className="space-y-1 px-4 pb-3 pt-2">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  'block rounded-lg px-3 py-2 text-base font-medium transition-all duration-300',
+                  'block px-4 py-3 font-semibold rounded-lg transition-all duration-200',
                   pathname === item.href
-                    ? 'bg-gradient-to-r from-red-600 to-red-800 text-white shadow-md'
-                    : 'text-gray-700 hover:bg-red-100 hover:text-red-600'
+                    ? 'bg-red-800 text-white'
+                    : 'text-white hover:bg-red-800'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -164,18 +198,31 @@ export function Header() {
               </Link>
             ))}
           </div>
-          <div className="border-t border-red-200 px-4 py-3 bg-white">
+          <div className="border-t border-red-800 px-4 py-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Link href="/cart" onClick={() => setMobileMenuOpen(false)} className="flex-1">
+                <Button variant="ghost" className="w-full justify-start text-white hover:bg-red-800">
+                  <FiShoppingCart className="mr-2 h-4 w-4" />
+                  Cart
+                  {cartItemCount > 0 && (
+                    <span className="ml-auto bg-white text-red-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                      {cartItemCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            </div>
             {session ? (
               <div className="space-y-2">
                 <Link href="/account" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full justify-start border-red-300 hover:bg-red-50 hover:border-red-600 transition-all duration-300">
+                  <Button variant="ghost" className="w-full justify-start text-white hover:bg-red-800">
                     <FiUser className="mr-2 h-4 w-4" />
                     My Account
                   </Button>
                 </Link>
                 {session.user.role === 'ADMIN' && (
                   <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full justify-start border-red-300 hover:bg-red-50 hover:border-red-600 transition-all duration-300">
+                    <Button variant="ghost" className="w-full justify-start text-white hover:bg-red-800">
                       <FiPackage className="mr-2 h-4 w-4" />
                       Admin Panel
                     </Button>
@@ -183,7 +230,7 @@ export function Header() {
                 )}
                 <Button
                   variant="ghost"
-                  className="w-full justify-start hover:bg-red-50 hover:text-red-600 transition-all duration-300"
+                  className="w-full justify-start text-white hover:bg-red-800"
                   onClick={() => {
                     signOut();
                     setMobileMenuOpen(false);
@@ -196,12 +243,12 @@ export function Header() {
             ) : (
               <div className="space-y-2">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full border-red-300 hover:bg-red-50 hover:border-red-600 transition-all duration-300">
+                  <Button variant="ghost" className="w-full text-white hover:bg-red-800">
                     Log in
                   </Button>
                 </Link>
                 <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                  <Button className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 transition-all duration-300">
+                  <Button className="w-full bg-white text-red-600 hover:bg-gray-100">
                     Sign up
                   </Button>
                 </Link>
