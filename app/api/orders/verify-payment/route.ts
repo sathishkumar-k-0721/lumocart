@@ -60,15 +60,10 @@ export async function POST(req: NextRequest) {
     };
 
     // Clear user's cart after successful payment
-    const cart = await prisma.cart.findUnique({
+    await prisma.cart.updateMany({
       where: { userId: user.id },
+      data: { items: [] },
     });
-
-    if (cart) {
-      await prisma.cartItem.deleteMany({
-        where: { cartId: cart.id },
-      });
-    }
 
     return NextResponse.json({
       success: true,
