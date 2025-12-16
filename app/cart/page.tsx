@@ -138,7 +138,7 @@ export default function CartPage() {
     } finally {
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(itemId);
+        newSet.delete(productId);
         return newSet;
       });
     }
