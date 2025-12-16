@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
+export const revalidate = 60;
+
 async function requireAdmin(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || (session.user as any).role !== 'ADMIN') {

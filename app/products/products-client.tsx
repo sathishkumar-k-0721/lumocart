@@ -188,8 +188,17 @@ export function ProductsClient() {
 
         <div>
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-lg font-semibold">Loading...</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                  <div className="h-40 bg-gray-200"></div>
+                  <div className="p-3">
+                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredProducts.length > 0 ? (
             <div>
