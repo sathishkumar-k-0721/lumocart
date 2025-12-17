@@ -3,6 +3,24 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth, requireAdmin } from '@/lib/auth';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { MongoClient } from 'mongodb';
+
+let cachedClient: MongoClient | null = null;
+
+async function getMongoClient() {
+  if (cachedClient) {
+    return cachedClient;
+  }
+  
+  const client = new MongoClient(process.env.DATABASE_URL!, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  
+  await client.connect();
+  cachedClient = client;
+  return client;
+}
 
 // Initialize Razorpay only if keys are available
 let razorpay: Razorpay | null = null;
@@ -23,60 +41,52 @@ function generateOrderNumber(): string {
 export async function GET(req: NextRequest) {
   try {
     const user = await requireAuth();
+    const client = await getMongoClient();
+    const db = client.db('lumocart');
+    
     const { searchParams } = new URL(req.url);
     const isAdmin = user.role === 'ADMIN';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
 
     const where = isAdmin ? {} : { userId: user.id };
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.order.count({ where }),
-    ]);
+    const orders = await db.collection('orders')
+      .find(where)
+      .sort({ createdAt: -1 })
+      .toArray();
 
-    // Fetch product details for all items
-    const ordersWithProducts = await Promise.all(
-      orders.map(async (order) => {
-        const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
-        const itemsWithProducts = await Promise.all(
-          items.map(async (item) => {
-            const product = await prisma.product.findUnique({
-              where: { id: item.productId },
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                image: true,
-              },
-            });
-            return {
-              ...item,
-              product,
-            };
-          })
-        );
-        return {
-          ...order,
-          items: itemsWithProducts,
-        };
-      })
-    );
+    // Collect all unique product IDs from all orders
+    const allProductIds = new Set<string>();
+    orders.forEach(order => {
+      const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+      items.forEach(item => allProductIds.add(item.productId));
+    });
+
+    // Fetch all products in ONE query
+    const products = await prisma.product.findMany({
+      where: { id: { in: Array.from(allProductIds) } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        image: true,
+      },
+    });
+
+    // Create a map for quick lookup
+    const productMap = new Map(products.map(p => [p.id, p]));
+
+    // Transform orders with products
+    const ordersWithProducts = orders.map(order => {
+      const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
+      const itemsWithProducts = items.map(item => ({
+        ...item,
+        product: productMap.get(item.productId) || null,
+      }));
+      return {
+        ...order,
+        items: itemsWithProducts,
+      };
+    });
 
     return NextResponse.json({
       success: true,

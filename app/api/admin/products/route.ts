@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/prisma';
 
-export const revalidate = 60;
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
     const categoryId = searchParams.get('categoryId');
     const subcategoryId = searchParams.get('subcategoryId');
 
-    let where: any = {};
+    const where: any = {};
     if (categoryId) {
       where.categoryId = categoryId;
     }
@@ -29,28 +30,20 @@ export async function GET(req: NextRequest) {
 
     const products = await prisma.product.findMany({
       where,
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        originalPrice: true,
-        stock: true,
-        categoryId: true,
-        subcategoryId: true,
-        isVisible: true,
-        featured: true,
-        image: true,
-        images: true,
-        description: true,
-      },
-      orderBy: { createdAt: 'desc' },
     });
-    const transformed = products.map(prod => ({ ...prod, _id: prod.id }));
-    return NextResponse.json(transformed);
+    
+    // Sort in memory instead of in database
+    products.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+    
+    return NextResponse.json(products);
   } catch (error) {
     console.error('Products GET error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { error: 'Failed to fetch products', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

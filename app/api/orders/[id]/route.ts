@@ -21,25 +21,26 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Fetch product details for items
+    // Fetch product details for items in ONE query
     const items = order.items as Array<{ productId: string; quantity: number; price: number }>;
-    const itemsWithProducts = await Promise.all(
-      items.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId },
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            images: true,
-          },
-        });
-        return {
-          ...item,
-          product,
-        };
-      })
-    );
+    const productIds = items.map(item => item.productId);
+    
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        images: true,
+      },
+    });
+
+    const productMap = new Map(products.map(p => [p.id, p]));
+
+    const itemsWithProducts = items.map(item => ({
+      ...item,
+      product: productMap.get(item.productId) || null,
+    }));
 
     const orderWithProducts = {
       ...order,

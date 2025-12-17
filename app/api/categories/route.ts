@@ -1,37 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
+import { MongoClient } from 'mongodb';
+
+let cachedClient: MongoClient | null = null;
+
+async function getMongoClient() {
+  if (cachedClient) {
+    return cachedClient;
+  }
+  
+  const client = new MongoClient(process.env.DATABASE_URL!, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  
+  await client.connect();
+  cachedClient = client;
+  return client;
+}
 
 // GET /api/categories - List all categories
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const includeProducts = searchParams.get('includeProducts') === 'true';
+    const client = await getMongoClient();
+    const db = client.db('lumocart');
 
-    const categories = await prisma.category.findMany({
-      include: {
-        _count: {
-          select: { products: true },
-        },
-        ...(includeProducts && {
-          products: {
-            take: 10,
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              price: true,
-              image: true,
-            },
-          },
-        }),
-      },
-      orderBy: { name: 'asc' },
-    });
+    const categories = await db.collection('categories')
+      .find({})
+      .sort({ name: 1 })
+      .toArray();
+
+    const transformed = categories.map(cat => ({
+      _id: cat._id.toString(),
+      id: cat._id.toString(),
+      name: cat.name,
+      slug: cat.slug,
+    }));
 
     return NextResponse.json({
       success: true,
-      categories,
+      categories: transformed,
     });
   } catch (error) {
     console.error('Failed to fetch categories:', error);
