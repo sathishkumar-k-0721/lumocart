@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import { MongoClient } from 'mongodb';
+import { cache } from '@/lib/cache';
+
+// Cache products API for 60 seconds
+export const revalidate = 60;
 
 let cachedClient: MongoClient | null = null;
 
@@ -23,12 +27,21 @@ async function getMongoClient() {
 // GET /api/products - List all products with pagination and filters
 export async function GET(req: NextRequest) {
   try {
-    const client = await getMongoClient();
-    const db = client.db('lumocart');
-    
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get('categoryId');
     const subcategoryId = searchParams.get('subcategoryId');
+    
+    // Create cache key
+    const cacheKey = `products:${categoryId || 'all'}:${subcategoryId || 'all'}`;
+    
+    // Check cache first (60 seconds TTL)
+    const cachedData = cache.get(cacheKey, 60000);
+    if (cachedData) {
+      return NextResponse.json(cachedData);
+    }
+    
+    const client = await getMongoClient();
+    const db = client.db('lumocart');
 
     let filter: any = { isVisible: true };
     if (categoryId) {
@@ -38,9 +51,11 @@ export async function GET(req: NextRequest) {
       filter.subcategoryId = subcategoryId;
     }
 
+    // Limit to 100 products max (faster query, less data transfer)
     const products = await db.collection('products')
       .find(filter)
       .sort({ createdAt: -1 })
+      .limit(100)
       .toArray();
     
     const transformed = products.map(prod => ({
@@ -59,7 +74,7 @@ export async function GET(req: NextRequest) {
       description: prod.description,
     }));
     
-    return NextResponse.json({
+    const response = {
       success: true,
       products: transformed,
       pagination: {
@@ -68,7 +83,12 @@ export async function GET(req: NextRequest) {
         total: transformed.length,
         pages: 1,
       },
-    });
+    };
+    
+    // Store in cache
+    cache.set(cacheKey, response);
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch products:', error);
     return NextResponse.json(
@@ -102,6 +122,9 @@ export async function POST(req: NextRequest) {
         category: true,
       },
     });
+
+    // Clear products cache
+    cache.clearPattern('products:');
 
     return NextResponse.json(
       {

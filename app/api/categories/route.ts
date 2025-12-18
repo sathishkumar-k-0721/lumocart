@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import { MongoClient } from 'mongodb';
+import { cache } from '@/lib/cache';
+
+// Cache categories for 5 minutes
+export const revalidate = 300;
 
 let cachedClient: MongoClient | null = null;
 
@@ -23,6 +27,12 @@ async function getMongoClient() {
 // GET /api/categories - List all categories
 export async function GET(req: NextRequest) {
   try {
+    // Check cache first (5 minutes TTL)
+    const cachedData = cache.get('categories:all', 300000);
+    if (cachedData) {
+      return NextResponse.json(cachedData);
+    }
+    
     const client = await getMongoClient();
     const db = client.db('lumocart');
 
@@ -38,10 +48,15 @@ export async function GET(req: NextRequest) {
       slug: cat.slug,
     }));
 
-    return NextResponse.json({
+    const response = {
       success: true,
       categories: transformed,
-    });
+    };
+    
+    // Store in cache
+    cache.set('categories:all', response);
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Failed to fetch categories:', error);
     return NextResponse.json(
