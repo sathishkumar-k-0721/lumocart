@@ -42,6 +42,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={true}
                     className="text-sm text-gray-600 hover:text-blue-600"
                   >
                     {link.name}
@@ -61,6 +62,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={true}
                     className="text-sm text-gray-600 hover:text-blue-600"
                   >
                     {link.name}
@@ -80,6 +82,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={true}
                     className="text-sm text-gray-600 hover:text-blue-600"
                   >
                     {link.name}

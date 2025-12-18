@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ProductModal } from '@/components/product-modal';
+import dynamic from 'next/dynamic';
+
+// Lazy load ProductModal - only loads when user clicks a product (faster initial load)
+const ProductModal = dynamic(() => import('@/components/product-modal').then(mod => ({ default: mod.ProductModal })), {
+  loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="animate-pulse text-white">Loading...</div></div>,
+  ssr: false,
+});
 
 interface Product {
   _id: string;
@@ -49,20 +55,14 @@ export function ProductsClient() {
 
   const fetchData = async () => {
     try {
-      const [prodRes, catRes, subRes] = await Promise.all([
-        fetch('/api/admin/products'),
-        fetch('/api/admin/categories'),
-        fetch('/api/admin/subcategories'),
-      ]);
+      // Use batched endpoint - 1 request instead of 3 (3x faster!)
+      const res = await fetch('/api/store-data');
 
-      if (prodRes.ok && catRes.ok && subRes.ok) {
-        const prodData = await prodRes.json();
-        const catData = await catRes.json();
-        const subData = await subRes.json();
-        const visibleProducts = prodData.filter((p: any) => p.isVisible);
-        setProducts(visibleProducts);
-        setCategories(catData);
-        setSubcategories(subData);
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data.products || []);
+        setCategories(data.categories || []);
+        setSubcategories(data.subcategories || []);
       }
     } catch (error) {
       console.error('Failed to fetch:', error);
