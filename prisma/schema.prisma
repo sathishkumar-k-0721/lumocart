@@ -57,6 +57,7 @@ model Subcategory {
   updatedAt   DateTime? @updatedAt
 
   @@unique([categoryId, slug])
+  @@index([categoryId])
   @@map("subcategories")
 }
 
@@ -80,6 +81,13 @@ model Product {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime?     @updatedAt
 
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([isVisible])
+  @@index([featured])
+  @@index([createdAt])
+  @@index([categoryId, isVisible])
+  @@index([featured, isVisible])
   @@map("products")
 }
 
@@ -114,6 +122,12 @@ model Order {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([userId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([status, paymentStatus])
   @@map("orders")
 }
 
