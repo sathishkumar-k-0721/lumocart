@@ -105,16 +105,16 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-full mx-auto px-14 md:px-20 py-12">
-          <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600 mb-8 animate-pulse">
-            <div className="h-10 bg-gray-200 rounded w-64 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-48"></div>
+        <div className="max-w-full mx-auto px-4 md:px-14 lg:px-20 py-6 md:py-12">
+          <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border-t-4 border-red-600 mb-6 md:mb-8 animate-pulse">
+            <div className="h-8 md:h-10 bg-gray-200 rounded w-48 md:w-64 mb-2"></div>
+            <div className="h-3 md:h-4 bg-gray-200 rounded w-32 md:w-48"></div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 animate-pulse">
-                <div className="h-40 bg-gray-200"></div>
-                <div className="p-3">
+                <div className="h-32 md:h-40 bg-gray-200"></div>
+                <div className="p-2 md:p-3">
                   <div className="h-4 bg-gray-200 rounded mb-2"></div>
                   <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                   <div className="flex gap-2">
@@ -143,12 +143,12 @@ export default function HomePage() {
       />
 
       {/* All Products */}
-      <div className="max-w-full mx-auto px-14 md:px-20 py-12">
-        <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-red-600 mb-8">
-          <h1 className="text-4xl font-bold text-red-600">Our Products</h1>
-          <p className="text-gray-600 text-sm mt-2">Discover our premium collection</p>
+      <div className="max-w-full mx-auto px-4 md:px-14 lg:px-20 py-6 md:py-12">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-md border-t-4 border-red-600 mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-4xl font-bold text-red-600">Our Products</h1>
+          <p className="text-gray-600 text-xs md:text-sm mt-2">Discover our premium collection</p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {products.map((product: any) => (
             <div
               key={product._id}
@@ -168,9 +168,9 @@ export default function HomePage() {
                 });
                 setIsModalOpen(true);
               }}
-              className="bg-white rounded-xl shadow-md hover:shadow-2xl overflow-hidden border border-gray-200 hover:border-red-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+              className="bg-white rounded-lg md:rounded-xl shadow-md hover:shadow-2xl overflow-hidden border border-gray-200 hover:border-red-500 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
             >
-              <div className="relative h-40 overflow-hidden bg-gray-100">
+              <div className="relative h-32 md:h-40 overflow-hidden bg-gray-100">
                 <img
                   src={product.image}
                   alt={product.name}
@@ -178,33 +178,33 @@ export default function HomePage() {
                 />
                 {product.stock === 0 && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <span className="bg-red-600 text-white px-3 py-1 rounded-full font-bold text-sm">Out of Stock</span>
+                    <span className="bg-red-600 text-white px-2 md:px-3 py-1 rounded-full font-bold text-xs md:text-sm">Out of Stock</span>
                   </div>
                 )}
               </div>
-              <div className="p-3">
-                <h3 className="text-sm font-bold mb-1 line-clamp-2 min-h-[2.5rem] hover:text-red-600 transition-colors">{product.name}</h3>
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-600 font-bold text-base">₹{product.originalPrice || product.price}</span>
+              <div className="p-2 md:p-3">
+                <h3 className="text-xs md:text-sm font-bold mb-1 line-clamp-2 min-h-[2rem] md:min-h-[2.5rem] hover:text-red-600 transition-colors">{product.name}</h3>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-2 md:mb-3 gap-1">
+                  <div className="flex items-center gap-1 md:gap-2">
+                    <span className="text-red-600 font-bold text-sm md:text-base">₹{product.originalPrice || product.price}</span>
                     {product.originalPrice && (
                       <span className="text-gray-400 text-xs line-through">₹{product.price}</span>
                     )}
                   </div>
                   {product.originalPrice && product.originalPrice < product.price && (
-                    <span className="text-red-600 font-bold text-sm">
+                    <span className="text-red-600 font-bold text-xs md:text-sm">
                       {Math.round(((product.price - product.originalPrice) / product.price) * 100)}% OFF
                     </span>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col md:flex-row gap-1.5 md:gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAddToCart(e, product);
                     }}
                     disabled={product.stock === 0}
-                    className="flex-1 px-2 py-2 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="flex-1 px-2 py-1.5 md:py-2 bg-gradient-to-r from-white via-red-50 to-white text-red-600 rounded-lg border-2 border-red-500 hover:border-red-600 hover:from-red-50 hover:via-red-100 hover:to-red-50 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     Add to Cart
                   </button>
@@ -214,7 +214,7 @@ export default function HomePage() {
                       handleBuyNow(e, product);
                     }}
                     disabled={product.stock === 0}
-                    className="flex-1 px-2 py-2 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    className="flex-1 px-2 py-1.5 md:py-2 bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white rounded-lg hover:from-red-700 hover:via-red-600 hover:to-red-500 text-xs font-semibold shadow hover:shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     Buy Now
                   </button>
