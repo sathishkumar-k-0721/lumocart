@@ -14,36 +14,36 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = React.useState(false);
   const [cartItemCount, setCartItemCount] = React.useState(0);
+  const fetchingRef = React.useRef(false);
 
-  // Fetch cart count
+  // Fetch cart count with debouncing
   const fetchCartCount = React.useCallback(async () => {
-    if (session) {
-      try {
-        const res = await fetch('/api/cart');
-        if (res.ok) {
-          const data = await res.json();
-          const count = data.cart?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
-          setCartItemCount(count);
-        }
-      } catch (error) {
-        console.error('Failed to fetch cart:', error);
+    if (!session || fetchingRef.current) return;
+    
+    fetchingRef.current = true;
+    try {
+      const res = await fetch('/api/cart');
+      if (res.ok) {
+        const data = await res.json();
+        const count = data.cart?.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
+        setCartItemCount(count);
       }
-    } else {
-      setCartItemCount(0);
+    } catch (error) {
+      console.error('Failed to fetch cart:', error);
+    } finally {
+      fetchingRef.current = false;
     }
   }, [session]);
 
+  // Single consolidated useEffect for all cart updates
   React.useEffect(() => {
-    fetchCartCount();
-  }, [fetchCartCount]);
+    if (!session) {
+      setCartItemCount(0);
+      return;
+    }
 
-  // Refresh cart count when pathname changes (e.g., after adding to cart)
-  React.useEffect(() => {
     fetchCartCount();
-  }, [pathname, fetchCartCount]);
 
-  // Listen for custom cart update events
-  React.useEffect(() => {
     const handleCartUpdate = () => {
       fetchCartCount();
     };
@@ -52,7 +52,7 @@ export function Header() {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, [fetchCartCount]);
+  }, [session, fetchCartCount]);
 
   const navigation = [
     { name: 'Home', href: '/' },

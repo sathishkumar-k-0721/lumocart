@@ -1,6 +1,5 @@
 'use client';
 
-import { MongoClient } from 'mongodb';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -22,10 +21,14 @@ export default function HomePage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/admin/products');
+      const res = await fetch('/api/products');
       if (res.ok) {
         const data = await res.json();
-        const visibleProducts = data.filter((p: any) => p.isVisible);
+        // API returns {success: true, products: [...]}
+        const productList = data.products || data;
+        const visibleProducts = Array.isArray(productList) 
+          ? productList.filter((p: any) => p.isVisible !== false)
+          : [];
         setProducts(visibleProducts);
       }
     } catch (error) {

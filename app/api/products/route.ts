@@ -1,67 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
+import { MongoClient } from 'mongodb';
+
+let cachedClient: MongoClient | null = null;
+
+async function getMongoClient() {
+  if (cachedClient) {
+    return cachedClient;
+  }
+  
+  const client = new MongoClient(process.env.DATABASE_URL!, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  
+  await client.connect();
+  cachedClient = client;
+  return client;
+}
 
 // GET /api/products - List all products with pagination and filters
 export async function GET(req: NextRequest) {
   try {
+    const client = await getMongoClient();
+    const db = client.db('lumocart');
+    
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '12');
-    const category = searchParams.get('category');
-    const search = searchParams.get('search');
-    const featured = searchParams.get('featured');
-    const sort = searchParams.get('sort') || 'createdAt';
-    const order = searchParams.get('order') || 'desc';
+    const categoryId = searchParams.get('categoryId');
+    const subcategoryId = searchParams.get('subcategoryId');
 
-    const skip = (page - 1) * limit;
-
-    // Build where clause
-    const where: any = {};
-    
-    if (category) {
-      where.category = { slug: category };
+    let filter: any = { isVisible: true };
+    if (categoryId) {
+      filter.categoryId = categoryId;
     }
-    
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
-    }
-    
-    if (featured === 'true') {
-      where.featured = true;
+    if (subcategoryId) {
+      filter.subcategoryId = subcategoryId;
     }
 
-    // Get products and total count
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          category: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-        },
-        skip,
-        take: limit,
-        orderBy: { [sort]: order },
-      }),
-      prisma.product.count({ where }),
-    ]);
-
+    const products = await db.collection('products')
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .toArray();
+    
+    const transformed = products.map(prod => ({
+      _id: prod._id.toString(),
+      id: prod._id.toString(),
+      name: prod.name,
+      price: prod.price,
+      originalPrice: prod.originalPrice,
+      stock: prod.stock,
+      categoryId: prod.categoryId,
+      subcategoryId: prod.subcategoryId,
+      isVisible: prod.isVisible,
+      featured: prod.featured,
+      image: prod.image,
+      images: prod.images,
+      description: prod.description,
+    }));
+    
     return NextResponse.json({
       success: true,
-      products,
+      products: transformed,
       pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
+        page: 1,
+        limit: transformed.length,
+        total: transformed.length,
+        pages: 1,
       },
     });
   } catch (error) {
