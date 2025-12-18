@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/footer";
 import { ToastProvider } from "@/components/ui/toast-provider";
 import { Providers } from "./providers";
 import { ConditionalLayout } from "./conditional-layout";
+import { SWRProvider } from "@/lib/swr-config";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -25,12 +26,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.variable + " font-sans antialiased"}>
-        <Providers>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
-          <ToastProvider />
-        </Providers>
+        <SWRProvider>
+          <Providers>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+            <ToastProvider />
+          </Providers>
+        </SWRProvider>
       </body>
     </html>
   );
