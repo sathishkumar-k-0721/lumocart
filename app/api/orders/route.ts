@@ -46,13 +46,21 @@ export async function GET(req: NextRequest) {
     
     const { searchParams } = new URL(req.url);
     const isAdmin = user.role === 'ADMIN';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
     const where = isAdmin ? {} : { userId: user.id };
 
-    const orders = await db.collection('orders')
-      .find(where)
-      .sort({ createdAt: -1 })
-      .toArray();
+    const [orders, total] = await Promise.all([
+      db.collection('orders')
+        .find(where)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+      db.collection('orders').countDocuments(where)
+    ]);
 
     // Collect all unique product IDs from all orders
     const allProductIds = new Set<string>();
