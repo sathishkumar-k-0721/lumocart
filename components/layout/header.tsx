@@ -77,6 +77,7 @@ export function Header() {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   'flex items-center px-4 py-2 rounded-lg font-light transition-all duration-300',
                   pathname === item.href

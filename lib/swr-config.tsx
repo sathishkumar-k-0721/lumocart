@@ -16,6 +16,9 @@ export function SWRProvider({ children }: { children: ReactNode }) {
         dedupingInterval: 60000, // Dedupe requests within 60 seconds
         errorRetryCount: 3, // Retry failed requests 3 times
         errorRetryInterval: 5000, // Wait 5s between retries
+        // Mobile optimization: Use stale data while revalidating (instant loads!)
+        revalidateOnMount: true,
+        keepPreviousData: true, // Show old data immediately, update in background
         // Cache responses locally
         provider: () => new Map(),
       }}
