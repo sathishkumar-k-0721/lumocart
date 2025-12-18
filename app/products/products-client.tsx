@@ -119,16 +119,16 @@ export function ProductsClient() {
         }}
       />
 
-      <div className="max-w-full mx-auto px-14 md:px-20 py-8">
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Filter Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="max-w-full mx-auto px-4 md:px-14 lg:px-20 py-6 md:py-8">
+        <div className="bg-white p-4 md:p-6 rounded-lg shadow-md mb-6 md:mb-8">
+          <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-800">Filter Products</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Category</label>
+              <label className="block text-xs md:text-sm font-semibold mb-2 text-gray-700">Category</label>
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
               >
                 <option value="">All Categories</option>
                 {categories.map((cat) => (
@@ -140,12 +140,12 @@ export function ProductsClient() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Subcategory</label>
+              <label className="block text-xs md:text-sm font-semibold mb-2 text-gray-700">Subcategory</label>
               <select
                 value={selectedSubcategory}
                 onChange={(e) => handleSubcategoryChange(e.target.value)}
                 disabled={!selectedCategory}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="">All Subcategories</option>
                 {filteredSubcategories.map((sub) => (
@@ -158,10 +158,10 @@ export function ProductsClient() {
           </div>
 
           {(selectedCategory || selectedSubcategory) && (
-            <div className="mt-4 flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-700">Active Filters:</span>
+            <div className="mt-3 md:mt-4 flex items-center gap-2 flex-wrap">
+              <span className="text-xs md:text-sm font-semibold text-gray-700">Active Filters:</span>
               {selectedCategory && (
-                <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold flex items-center gap-2">
+                <span className="px-2 md:px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2">
                   {getCategoryName(selectedCategory)}
                   <button
                     onClick={() => handleCategoryChange('')}
@@ -172,7 +172,7 @@ export function ProductsClient() {
                 </span>
               )}
               {selectedSubcategory && (
-                <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-semibold flex items-center gap-2">
+                <span className="px-2 md:px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2">
                   {getSubcategoryName(selectedSubcategory)}
                   <button
                     onClick={() => handleSubcategoryChange('')}
@@ -188,11 +188,11 @@ export function ProductsClient() {
 
         <div>
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-                  <div className="h-40 bg-gray-200"></div>
-                  <div className="p-3">
+                <div key={i} className="bg-white rounded-lg md:rounded-xl shadow-md overflow-hidden animate-pulse">
+                  <div className="h-32 md:h-40 bg-gray-200"></div>
+                  <div className="p-2 md:p-3">
                     <div className="h-4 bg-gray-200 rounded mb-2"></div>
                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
                     <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -202,10 +202,10 @@ export function ProductsClient() {
             </div>
           ) : filteredProducts.length > 0 ? (
             <div>
-              <p className="text-gray-600 mb-6 text-lg">
+              <p className="text-gray-600 mb-4 md:mb-6 text-sm md:text-lg">
                 Showing {filteredProducts.length} of {products.length} products
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                 {filteredProducts.map((product) => (
                   <div
                     key={product._id}
@@ -225,9 +225,9 @@ export function ProductsClient() {
                       });
                       setIsModalOpen(true);
                     }}
-                    className="bg-white rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-red-500 transform hover:-translate-y-1 cursor-pointer"
+                    className="bg-white rounded-lg md:rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-red-500 transform hover:-translate-y-1 cursor-pointer"
                   >
-                    <div className="relative overflow-hidden h-40 bg-gray-100">
+                    <div className="relative overflow-hidden h-32 md:h-40 bg-gray-100">
                       <img
                         src={product.image}
                         alt={product.name}
@@ -235,23 +235,23 @@ export function ProductsClient() {
                       />
                       {product.stock === 0 && (
                         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                          <span className="bg-red-600 text-white px-3 py-1 rounded-full font-bold text-sm">Out of Stock</span>
+                          <span className="bg-red-600 text-white px-2 md:px-3 py-1 rounded-full font-bold text-xs md:text-sm">Out of Stock</span>
                         </div>
                       )}
                     </div>
-                    <div className="p-3">
-                      <h3 className="font-bold text-sm mb-2 group-hover:text-red-600 transition-colors line-clamp-2 min-h-[2.5rem]">
+                    <div className="p-2 md:p-3">
+                      <h3 className="font-bold text-xs md:text-sm mb-1 md:mb-2 group-hover:text-red-600 transition-colors line-clamp-2 min-h-[2rem] md:min-h-[2.5rem]">
                         {product.name}
                       </h3>
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-red-600 font-bold text-base">₹{product.originalPrice || product.price}</span>
+                      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 md:mb-2">
+                        <div className="flex items-center gap-1 md:gap-2">
+                          <span className="text-red-600 font-bold text-sm md:text-base">₹{product.originalPrice || product.price}</span>
                           {product.originalPrice && (
                             <span className="text-gray-400 text-xs line-through">₹{product.price}</span>
                           )}
                         </div>
                         {product.originalPrice && product.originalPrice < product.price && (
-                          <span className="text-red-600 font-bold text-sm">
+                          <span className="text-red-600 font-bold text-xs md:text-sm">
                             {Math.round(((product.price - product.originalPrice) / product.price) * 100)}% OFF
                           </span>
                         )}

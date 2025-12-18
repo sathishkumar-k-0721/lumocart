@@ -143,17 +143,17 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="container mx-auto px-14 md:px-20 py-8">
+    <div className="container mx-auto px-4 md:px-14 lg:px-20 py-6 md:py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 md:mb-8">
         <div className="border-t-4 border-red-600 mb-4"></div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-            <p className="text-gray-600 mt-1">Track and manage all your orders</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Orders</h1>
+            <p className="text-gray-600 mt-1 text-sm md:text-base">Track and manage all your orders</p>
           </div>
           <Link href="/">
-            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50 text-sm md:text-base">
               <FiArrowLeft className="mr-2 h-4 w-4" />
               Continue Shopping
             </Button>
@@ -161,57 +161,57 @@ export default function OrdersPage() {
         </div>
 
         {/* Order Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
-                <FiPackage className="h-6 w-6 text-white" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 md:p-4 border border-blue-200">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-blue-600 flex items-center justify-center">
+                <FiPackage className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-900">{orders.length}</p>
-                <p className="text-sm text-blue-700">Total Orders</p>
+                <p className="text-xl md:text-2xl font-bold text-blue-900">{orders.length}</p>
+                <p className="text-xs md:text-sm text-blue-700">Total Orders</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-orange-600 flex items-center justify-center">
-                <FiRotateCw className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-3 md:p-4 border border-orange-200">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-orange-600 flex items-center justify-center">
+                <FiRotateCw className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-orange-900">
+                <p className="text-xl md:text-2xl font-bold text-orange-900">
                   {orders.filter(o => o.status === 'PROCESSING').length}
                 </p>
-                <p className="text-sm text-orange-700">Processing</p>
+                <p className="text-xs md:text-sm text-orange-700">Processing</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
-                <FiTruck className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 md:p-4 border border-blue-200">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-blue-600 flex items-center justify-center">
+                <FiTruck className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-900">
+                <p className="text-xl md:text-2xl font-bold text-blue-900">
                   {orders.filter(o => o.status === 'SHIPPED').length}
                 </p>
-                <p className="text-sm text-blue-700">Shipped</p>
+                <p className="text-xs md:text-sm text-blue-700">Shipped</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-green-600 flex items-center justify-center">
-                <FiCheckCircle className="h-6 w-6 text-white" />
+          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 md:p-4 border border-green-200">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-green-600 flex items-center justify-center">
+                <FiCheckCircle className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-900">
+                <p className="text-xl md:text-2xl font-bold text-green-900">
                   {orders.filter(o => o.status === 'DELIVERED').length}
                 </p>
-                <p className="text-sm text-green-700">Delivered</p>
+                <p className="text-xs md:text-sm text-green-700">Delivered</p>
               </div>
             </div>
           </div>
@@ -246,8 +246,62 @@ export default function OrdersPage() {
           {orders.map((order) => (
             <Link key={order.id} href={`/orders/${order.id}`}>
               <Card className="border-gray-200 hover:border-red-500 shadow-md hover:shadow-xl transition-all overflow-hidden cursor-pointer">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between gap-4">
+                <CardContent className="p-4 md:p-6">
+                  {/* Mobile Layout */}
+                  <div className="md:hidden space-y-4">
+                    {/* Order Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
+                          <FiPackage className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-base">
+                            #{order.orderNumber}
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1 text-xs font-semibold ${getStatusColor(
+                          order.status
+                        )}`}
+                      >
+                        {getStatusIcon(order.status)}
+                        {order.status}
+                      </span>
+                    </div>
+
+                    {/* Order Details */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <FiShoppingBag className="h-4 w-4" />
+                        <span className="text-sm font-medium">{order.items.length} items</span>
+                      </div>
+                      <div className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold ${getPaymentStatusColor(
+                        order.paymentStatus
+                      )}`}>
+                        {getPaymentIcon(order.paymentStatus)}
+                        {order.paymentStatus}
+                      </div>
+                      <p className="text-lg font-bold text-red-600">
+                        ₹{order.totalAmount.toFixed(2)}
+                      </p>
+                    </div>
+
+                    <Button className="w-full bg-gradient-to-r from-red-600 via-red-700 to-red-800 text-white hover:from-red-700 hover:via-red-800 hover:to-red-900 shadow-md text-sm">
+                      View Details
+                    </Button>
+                  </div>
+
+                  {/* Desktop Layout */}
+                  <div className="hidden md:flex items-center justify-between gap-4">
                     {/* Order Info */}
                     <div className="flex items-center gap-4 flex-1">
                       <div className="h-14 w-14 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center flex-shrink-0">

@@ -5,7 +5,7 @@ export function Footer() {
   const footerLinks = {
     shop: [
       { name: 'All Products', href: '/products' },
-      { name: 'Categories', href: '/categories' },
+      { name: 'Category', href: '/products' },
       { name: 'Featured', href: '/products?featured=true' },
       { name: 'New Arrivals', href: '/products?sort=createdAt&order=desc' },
     ],
